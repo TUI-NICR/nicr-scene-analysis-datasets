@@ -1,0 +1,114 @@
+stages:
+  - stylecheck
+  - test
+  - deploy
+
+.conda_env: &conda_env
+    before_script:
+        # update conda
+        - conda config --set always_yes yes
+        - conda update -q conda
+
+        # create and activate environment
+        - conda create -q -n testenv_${CI_PIPELINE_ID}_${CI_JOB_NAME}_py${PYTHON_VERSION_TO_USE//./} python=${PYTHON_VERSION_TO_USE}
+        - source activate testenv_${CI_PIPELINE_ID}_${CI_JOB_NAME}_py${PYTHON_VERSION_TO_USE//./}
+    after_script:
+        # remove environment
+        - conda env remove --name testenv_${CI_PIPELINE_ID}_${CI_JOB_NAME}_py${PYTHON_VERSION_TO_USE//./}
+
+.test_template: &test_template
+    <<: *conda_env
+    stage: test
+    rules:
+        - if: $CI_MERGE_REQUEST_TITLE =~ /^(Draft:|WIP:|\[Draft\]|\[WIP\])/
+          when: manual
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TITLE !~ /^(Draft:|WIP:|\[Draft\]|\[WIP\])/
+        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+    script:
+        # for debugging, list all environment variables
+        # - export
+
+        # install packages (use conda to avoid time-consuming installations)
+        - conda install -q pytest pytest-cov
+        - pip install -q pytest-html
+
+        # pytorch
+        - conda install pytorch torchvision torchaudio cpuonly -c pytorch
+
+        # check conda installation
+        - conda info
+        - conda list
+
+        # install package (and all missing dependencies)
+        - pip install -q --editable .[test]
+
+        # test package (opt: get coverage)
+        - |
+          if [ "${REPORT_COVERAGE}" == "true" ]; then
+              py.test tests/ -rx -s -vv --cov=${CI_PROJECT_NAME//-/_} --cov-fail-under 80 --cov-report html --cov-report term --html=report_py${PYTHON_VERSION_TO_USE//./}.html --self-contained-html
+          else
+              py.test tests/ -rx -s -vv --html=report_py${PYTHON_VERSION_TO_USE//./}.html --self-contained-html
+          fi
+    coverage: '/^TOTAL.*\s+(\d+\%)$/'
+    artifacts:
+        when: always
+        paths:
+            - report_py${PYTHON_VERSION_TO_USE//./}.html
+            - htmlcov
+
+style_check:
+    <<: *conda_env
+    stage: stylecheck
+    rules:
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+    variables:
+        PYTHON_VERSION_TO_USE: "3.6"     # ubuntu 18.04 / jetson default
+    script:
+        # install packages
+        - conda install -q pycodestyle pylint
+
+        # check style using pep8
+        - pycodestyle --show-source --show-pep8 .
+
+        # check style using pylint (without taking into account)
+        - pylint ${CI_PROJECT_NAME//-/_} --rcfile=${CI_PROJECT_DIR}/.pylintrc || true
+
+tests_py36:
+    <<: *test_template
+    variables:
+        PYTHON_VERSION_TO_USE: "3.6"
+        REPORT_COVERAGE: "false"
+
+tests_py37:
+    <<: *test_template
+    variables:
+        PYTHON_VERSION_TO_USE: "3.7"
+        REPORT_COVERAGE: "false"
+
+tests_py38:
+    <<: *test_template
+    variables:
+        PYTHON_VERSION_TO_USE: "3.8"
+        REPORT_COVERAGE: "false"
+
+update_pip_package:
+    stage: deploy
+    rules:
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+          when: manual
+    script:
+        - pip install twine
+
+        # build package
+        - python setup.py sdist bdist_wheel
+
+        # upload package
+        - export TWINE_USERNAME=${TWINE_USERNAME}
+        - export TWINE_PASSWORD=${TWINE_PASSWORD}
+        - python -m twine upload --skip-existing --repository-url ${CI_API_V4_URL}/projects/${PACKAGE_REGISTRY}/packages/pypi dist/*

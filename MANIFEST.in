@@ -1,0 +1,19 @@
+include nicr_scene_analysis_datasets/datasets/cityscapes/README.md
+
+include nicr_scene_analysis_datasets/datasets/coco/README.md
+
+include nicr_scene_analysis_datasets/datasets/hypersim/README.md
+
+include nicr_scene_analysis_datasets/datasets/nyuv2/README.md
+include nicr_scene_analysis_datasets/datasets/nyuv2/class13Mapping.mat
+include nicr_scene_analysis_datasets/datasets/nyuv2/classMapping40.mat
+include nicr_scene_analysis_datasets/datasets/nyuv2/splits.mat
+include nicr_scene_analysis_datasets/datasets/nyuv2/manual_orientations_test.json
+include nicr_scene_analysis_datasets/datasets/nyuv2/manual_orientations_train.json
+
+include nicr_scene_analysis_datasets/datasets/scenenetrgbd/README.md
+include nicr_scene_analysis_datasets/datasets/scenenetrgbd/scenenet.proto
+
+include nicr_scene_analysis_datasets/datasets/sunrgbd/README.md
+include nicr_scene_analysis_datasets/datasets/sunrgbd/nyu_additional_class_mapping.json
+include nicr_scene_analysis_datasets/datasets/sunrgbd/nyu_weak_box_3d_mapping.json
