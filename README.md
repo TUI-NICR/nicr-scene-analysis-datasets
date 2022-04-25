@@ -67,11 +67,11 @@ pip install . [--user]
 
 ## Prepare dataset
 Please follow the instructions given in the respective dataset folder to prepare the datasets.
-- [Cityscapes](nicr_scene_analysis_datasets/cityscapes)
-- [Hypersim](nicr_scene_analysis_datasets/hypersim)
-- [NYUv2](nicr_scene_analysis_datasets/nyuv2)
-- [SceneNet RGB-D](nicr_scene_analysis_datasets/scenenetrgbd)
-- [SUNRGB-D](nicr_scene_analysis_datasets/sunrgbd)
+- [Cityscapes](nicr_scene_analysis_datasets/datasets/cityscapes)
+- [Hypersim](nicr_scene_analysis_datasets/datasets/hypersim)
+- [NYUv2](nicr_scene_analysis_datasets/datasets/nyuv2)
+- [SceneNet RGB-D](nicr_scene_analysis_datasets/datasets/scenenetrgbd)
+- [SUNRGB-D](nicr_scene_analysis_datasets/datasets/sunrgbd)
 
 
 ## Usage
