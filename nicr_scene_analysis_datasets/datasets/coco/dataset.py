@@ -59,7 +59,7 @@ class COCO(COCOMeta, RGBDataset):
                 self._filenames_per_camera[camera].append(fn)
 
             self._cameras = tuple(self._filenames_per_camera.keys())
-        else:
+        elif not self._disable_prints:
             print(f"Loaded COCO dataset without files")
             self._cameras = self.CAMERAS
 
@@ -108,6 +108,8 @@ class COCO(COCOMeta, RGBDataset):
                           directory,
                           f'{filename}{ext}')
         img = cv2.imread(fp, cv2.IMREAD_UNCHANGED)
+        if img is None:
+            raise IOError(f"Unable to load image: '{fp}'")
         if 3 == img.ndim:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 

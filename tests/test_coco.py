@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Simple (interface) tests for NYUv2 dataset
+Simple (interface) tests for COCO dataset
 
 .. codeauthor:: Soehnke Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 """
-import os
-
 import pytest
 
 from nicr_scene_analysis_datasets import COCO

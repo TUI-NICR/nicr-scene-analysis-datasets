@@ -22,7 +22,6 @@ from ...utils.io import download_file
 from ...utils.io import create_dir
 from ...utils.io import create_or_update_creation_metafile
 from ...utils.io import extract_zip
-from ..nyuv2.nyuv2 import NYUv2Meta
 from . import prepare_instances
 from .match_nyuv2_instances import NYUv2InstancesMatcher
 from .sunrgbd import SUNRGBDMeta
@@ -203,7 +202,7 @@ def main():
         )
         create_dir(os.path.dirname(semantic_path_colored_nyuv2))
         save_indexed_png(semantic_path_colored_nyuv2, semantic,
-                         np.array(NYUv2Meta.SEMANTIC_CLASS_COLORS_40,
+                         np.array(SUNRGBDMeta.SEMANTIC_CLASS_COLORS_NYUV2,
                                   dtype='uint8'))
 
         # Scene class ----------------------------------------------------------

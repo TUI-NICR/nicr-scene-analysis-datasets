@@ -20,6 +20,7 @@ def run_setup():
         'cityscapesScripts==1.5.0',
         'numpy',
         'pillow',
+        'scipy',
         'tqdm>=4.42.0',
     ]
 
@@ -39,7 +40,6 @@ def run_setup():
         'pandas',
         'panopticapi @ git+https://github.com/cocodataset/panopticapi.git',
         'protobuf',
-        'scipy',
         'termcolor',
     ]
 

@@ -55,12 +55,15 @@ class HypersimMeta:
     TRAIN_SPLIT_DEPTH_STATS = DepthStats(
         min=1.0,
         max=65535.0,
+        mean=6245.599769632095,    # updated in v040
+        std=7062.149390036199    # updated in v040
+    )
+    # TODO(v050): remove old depth stats
+    _TRAIN_SPLIT_DEPTH_STATS_V030 = DepthStats(
+        min=1.0,
+        max=65535.0,
         mean=6249.621001070915,
         std=6249.621001070915
-        # TODO (v040): the values above are wrong but kept in order to avoid
-        # breaking existing pipelines
-        # mean=6245.599769632095,
-        # std=7062.149390036199
     )
 
     # This is equal to two bytes.

@@ -9,6 +9,7 @@ from ...dataset_base import SceneLabel
 from ...dataset_base import SceneLabelList
 from ...dataset_base import SemanticLabel
 from ...dataset_base import SemanticLabelList
+from ..nyuv2.nyuv2 import NYUv2Meta
 
 
 class SUNRGBDMeta:
@@ -226,6 +227,8 @@ class SUNRGBDMeta:
         (12, 83, 45)
     )
 
+    SEMANTIC_CLASS_COLORS_NYUV2 = NYUv2Meta.SEMANTIC_CLASS_COLORS_40[:38]
+
     SEMANTIC_LABEL_LIST = SemanticLabelList((
         # class_name, is_thing, use orientations, color
         SemanticLabel('void',           False, False, SEMANTIC_CLASS_COLORS[0]),
@@ -259,53 +262,72 @@ class SUNRGBDMeta:
         SemanticLabel('shower curtain', True,  False, SEMANTIC_CLASS_COLORS[28]),
         SemanticLabel('box',            True,  False, SEMANTIC_CLASS_COLORS[29]),
         SemanticLabel('whiteboard',     True,  False, SEMANTIC_CLASS_COLORS[30]),
-        SemanticLabel('person',         True,  True, SEMANTIC_CLASS_COLORS[31]),
+        SemanticLabel('person',         True,  True,  SEMANTIC_CLASS_COLORS[31]),
         SemanticLabel('night stand',    True,  True,  SEMANTIC_CLASS_COLORS[32]),
         SemanticLabel('toilet',         True,  True,  SEMANTIC_CLASS_COLORS[33]),
-        SemanticLabel('sink',           True,  False,  SEMANTIC_CLASS_COLORS[34]),
+        SemanticLabel('sink',           True,  False, SEMANTIC_CLASS_COLORS[34]),
         SemanticLabel('lamp',           True,  False, SEMANTIC_CLASS_COLORS[35]),
         SemanticLabel('bathtub',        True,  False, SEMANTIC_CLASS_COLORS[36]),
         SemanticLabel('bag',            True,  False, SEMANTIC_CLASS_COLORS[37]),
     ))
 
+    # create SEMANTIC_LABEL_LIST_NYUV2_COLORS as copy from SEMANTIC_LABEL_LIST
+    # and only change color
+    SEMANTIC_LABEL_LIST_NYUV2_COLORS = SemanticLabelList((
+        SemanticLabel(sem_label.class_name,
+                      sem_label.is_thing,
+                      sem_label.use_orientations,
+                      color)
+        for sem_label, color in zip(SEMANTIC_LABEL_LIST, SEMANTIC_CLASS_COLORS_NYUV2)
+    ))
+
+    SEMANTIC_CLASS_NAMES_GERMAN = (
+        'Void',
+        'Wand',
+        'Boden',
+        'Schrank',
+        'Bett',
+        'Stuhl',
+        'Sofa',
+        'Tisch',
+        'Tür',
+        'Fenster',
+        'Bücherregal',
+        'Bild',
+        'Tresen',
+        'Jalousien',
+        'Schreibtisch',
+        'Regal',
+        'Vorhang',
+        'Kommode',
+        'Kissen',
+        'Spiegel',
+        'Bodenmatte',
+        'Kleidung',
+        'Zimmerdecke',
+        'Bücher',
+        'Kühlschrank',
+        'Fernseher',
+        'Papier',
+        'Handtuch',
+        'Duschvorhang',
+        'Kiste',
+        'Whiteboard',
+        'Person',
+        'Nachttisch',
+        'Toilette',
+        'Waschbecken',
+        'Lampe',
+        'Badewanne',
+        'Tasche'
+        )
+
+    # create SEMANTIC_LABEL_LIST_GERMAN as copy from SEMANTIC_LABEL_LIST
+    # but with translated label
     SEMANTIC_LABEL_LIST_GERMAN = SemanticLabelList((
-        # class_name, is_thing, use orientations, color
-        SemanticLabel('Void',         False, False, SEMANTIC_CLASS_COLORS[0]),
-        SemanticLabel('Wand',         False, False, SEMANTIC_CLASS_COLORS[1]),
-        SemanticLabel('Boden',        False, False, SEMANTIC_CLASS_COLORS[2]),
-        SemanticLabel('Schrank',      True,  True,  SEMANTIC_CLASS_COLORS[3]),
-        SemanticLabel('Bett',         True,  True,  SEMANTIC_CLASS_COLORS[4]),
-        SemanticLabel('Stuhl',        True,  True,  SEMANTIC_CLASS_COLORS[5]),
-        SemanticLabel('Sofa',         True,  True,  SEMANTIC_CLASS_COLORS[6]),
-        SemanticLabel('Tisch',        True,  False, SEMANTIC_CLASS_COLORS[7]),
-        SemanticLabel('Tür',          True,  False, SEMANTIC_CLASS_COLORS[8]),
-        SemanticLabel('Fenster',      True,  False, SEMANTIC_CLASS_COLORS[9]),
-        SemanticLabel('Bücherregal',  True,  True,  SEMANTIC_CLASS_COLORS[10]),
-        SemanticLabel('Bild',         True,  False, SEMANTIC_CLASS_COLORS[11]),
-        SemanticLabel('Tresen',       True,  False, SEMANTIC_CLASS_COLORS[12]),
-        SemanticLabel('Jalousien',    True,  False, SEMANTIC_CLASS_COLORS[13]),
-        SemanticLabel('Schreibtisch', True,  False, SEMANTIC_CLASS_COLORS[14]),
-        SemanticLabel('Regal',        True,  True,  SEMANTIC_CLASS_COLORS[15]),
-        SemanticLabel('Vorhang',      True,  False, SEMANTIC_CLASS_COLORS[16]),
-        SemanticLabel('Kommode',      True,  True,  SEMANTIC_CLASS_COLORS[17]),
-        SemanticLabel('Kissen',       True,  False, SEMANTIC_CLASS_COLORS[18]),
-        SemanticLabel('Spiegel',      True,  False, SEMANTIC_CLASS_COLORS[19]),
-        SemanticLabel('Bodenmatte',   True,  False, SEMANTIC_CLASS_COLORS[20]),
-        SemanticLabel('Kleidung',     True,  False, SEMANTIC_CLASS_COLORS[21]),
-        SemanticLabel('Zimmerdecke',  False, False, SEMANTIC_CLASS_COLORS[22]),
-        SemanticLabel('Bücher',       True,  False, SEMANTIC_CLASS_COLORS[23]),
-        SemanticLabel('Kühlschrank',  True,  True,  SEMANTIC_CLASS_COLORS[24]),
-        SemanticLabel('Fernseher',    True,  True,  SEMANTIC_CLASS_COLORS[25]),
-        SemanticLabel('Papier',       True,  False, SEMANTIC_CLASS_COLORS[26]),
-        SemanticLabel('Handtuch',     True,  False, SEMANTIC_CLASS_COLORS[27]),
-        SemanticLabel('Duschvorhang', True,  False, SEMANTIC_CLASS_COLORS[28]),
-        SemanticLabel('Kiste',        True,  False, SEMANTIC_CLASS_COLORS[29]),
-        SemanticLabel('Whiteboard',   True,  False, SEMANTIC_CLASS_COLORS[30]),
-        SemanticLabel('Person',       True,  False, SEMANTIC_CLASS_COLORS[31]),
-        SemanticLabel('Nachttisch',   True,  True,  SEMANTIC_CLASS_COLORS[32]),
-        SemanticLabel('Toilette',     True,  True,  SEMANTIC_CLASS_COLORS[33]),
-        SemanticLabel('Waschbecken',  True,  True,  SEMANTIC_CLASS_COLORS[34]),
-        SemanticLabel('Lampe',        True,  False, SEMANTIC_CLASS_COLORS[35]),
-        SemanticLabel('Badewanne',    True,  False, SEMANTIC_CLASS_COLORS[36]),
-        SemanticLabel('Tasche',       True,  False, SEMANTIC_CLASS_COLORS[37])
+        SemanticLabel(class_name_german,
+                      sem_label.is_thing,
+                      sem_label.use_orientations,
+                      sem_label.color)
+        for sem_label, class_name_german in zip(SEMANTIC_LABEL_LIST, SEMANTIC_CLASS_NAMES_GERMAN)
     ))

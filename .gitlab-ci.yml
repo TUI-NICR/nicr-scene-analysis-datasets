@@ -34,8 +34,12 @@ stages:
         - pip install -q pytest-html
 
         # pytorch
-        - conda install pytorch torchvision torchaudio cpuonly -c pytorch
+        - conda install pytorch=1.10.1 torchvision=0.11.2 cpuonly -c pytorch
 
+        # detectron2
+        - python -m pip install detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cpu/torch1.10/index.html
+        # panopticapi
+        - pip install git+https://github.com/cocodataset/panopticapi.git
         # check conda installation
         - conda info
         - conda list

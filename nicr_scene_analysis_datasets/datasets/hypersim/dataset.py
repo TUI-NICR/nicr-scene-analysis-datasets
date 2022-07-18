@@ -70,7 +70,7 @@ class Hypersim(HypersimMeta, RGBDDataset):
             fp = os.path.join(self._dataset_path,
                               self.SPLIT_FILELIST_FILENAMES[self._split])
             self._filenames = np.loadtxt(fp, dtype=str)
-        else:
+        elif not self._disable_prints:
             print(f"Loaded Hypersim dataset without files")
 
         # build config object
@@ -122,11 +122,13 @@ class Hypersim(HypersimMeta, RGBDDataset):
                           self.split,
                           directory,
                           filename)
-        im = cv2.imread(fp, cv2.IMREAD_UNCHANGED)
-        if im.ndim == 3:
-            im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        img = cv2.imread(fp, cv2.IMREAD_UNCHANGED)
+        if img is None:
+            raise IOError(f"Unable to load image: '{fp}'")
+        if img.ndim == 3:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        return im
+        return img
 
     def _load_rgb(self, idx) -> np.array:
         return self._load(self.RGB_DIR, f'{self._filenames[idx]}.png')

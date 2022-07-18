@@ -32,6 +32,7 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
         sample_keys: Tuple[str] = ('rgb', 'depth', 'semantic'),
         use_cache: bool = False,
         depth_mode: str = 'refined',
+        semantic_use_nyuv2_colors: bool = False,
         scene_use_indoor_domestic_labels: bool = False,
         **kwargs: Any
     ) -> None:
@@ -60,7 +61,7 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
                               self.SPLIT_FILELIST_FILENAMES[self._split])
             self._filenames_dict['list'], self._filenames_dict['dict'] = \
                 self._list_and_dict_from_file(fp)
-        else:
+        elif not self._disable_prints:
             print(f"Loaded SUNRGBD dataset without files")
 
         # build config object
@@ -70,8 +71,12 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
         else:
             # use original scene labels
             scene_label_list = self.SCENE_LABEL_LIST
+        if semantic_use_nyuv2_colors:
+            semantic_label_list = self.SEMANTIC_LABEL_LIST_NYUV2_COLORS
+        else:
+            semantic_label_list = self.SEMANTIC_LABEL_LIST
         self._config = build_dataset_config(
-            semantic_label_list=self.SEMANTIC_LABEL_LIST,
+            semantic_label_list=semantic_label_list,
             scene_label_list=scene_label_list,
             depth_stats=self.TRAIN_SPLIT_DEPTH_STATS
         )
@@ -140,6 +145,8 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
         else:
             # default load using OpenCV
             data = cv2.imread(fp, cv2.IMREAD_UNCHANGED)
+            if data is None:
+                raise IOError(f"Unable to load image: '{fp}'")
             if data.ndim == 3:
                 data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
 

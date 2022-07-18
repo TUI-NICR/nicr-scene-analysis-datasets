@@ -275,6 +275,10 @@ def main():
                     continue
 
                 # assign new id
+                # note that new_id==0 always corresponds to the void label due
+                # to the instance encoding above ((labels << 6) + instances),
+                # thus, we do not assign new_id==0 to any instance of a thing
+                # class except its area is smaller than the area threshold
                 instances_write[mask] = new_id
 
             cv2.imwrite(os.path.join(instances_base_path, f'{idx:04d}.png'),
