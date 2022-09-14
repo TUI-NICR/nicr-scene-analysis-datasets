@@ -67,7 +67,7 @@ def main():
 
     # path where to store stuff during creation
     tmp_path = os.path.join(output_path, TMP_DIR)
-    create_dir(output_path)
+    create_dir(tmp_path)
 
     # update or write metafile
     create_or_update_creation_metafile(output_path)
@@ -309,7 +309,12 @@ def main():
 
             boxes_3d_dict["instance_numbers"] = box_mapping.tolist()
         else:
-            instance_img = cv2.imread(instance_path, cv2.IMREAD_UNCHANGED)
+            # Only imread if file exists. Else set instance_img to None
+            # so no orientations are created.
+            if os.path.isfile(instance_path):
+                instance_img = cv2.imread(instance_path, cv2.IMREAD_UNCHANGED)
+            else:
+                instance_img = None
 
         # Intrinsics -----------------------------------------------------------
         intrinsics_path = os.path.join(output_path, split_dir,
@@ -331,31 +336,36 @@ def main():
             json.dump(normalized_intrinsics, j, indent=4)
 
         # Orientations ---------------------------------------------------------
-        orientations_path = os.path.join(output_path, split_dir,
-                                         SUNRGBDMeta.ORIENTATIONS_DIR,
-                                         cam_path, f'{i:05d}.json')
-        create_dir(os.path.dirname(orientations_path))
 
-        orientations = np.array(orientations_list)
-        orientations_dict = {}
-        for key, value in enumerate(orientations):
-            # +1 as 0 indicates void/no instance
-            current_key = key + 1
-            mask = instance_img == current_key
-            # This happens when no pixel was inside a 3d box, which leads
-            # to no instance being created
-            if mask.sum() == 0:
-                continue
+        # The orientations of the instance can only be saved, if instances are
+        # created or loaded.
+        # instance_img will be None, if it couldn't be loaded
+        if args.create_instances or instance_img is not None:
+            orientations_path = os.path.join(output_path, split_dir,
+                                             SUNRGBDMeta.ORIENTATIONS_DIR,
+                                             cam_path, f'{i:05d}.json')
+            create_dir(os.path.dirname(orientations_path))
 
-            orientations_dict[current_key] = value
+            orientations = np.array(orientations_list)
+            orientations_dict = {}
+            for key, value in enumerate(orientations):
+                # +1 as 0 indicates void/no instance
+                current_key = key + 1
+                mask = instance_img == current_key
+                # This happens when no pixel was inside a 3d box, which leads
+                # to no instance being created
+                if mask.sum() == 0:
+                    continue
 
-        with open(orientations_path, "w") as j:
-            json.dump(orientations_dict, j, indent=4)
+                orientations_dict[current_key] = value
 
-        if is_train:
-            train_dirs.append(os.path.join(cam_path, f"{i:05d}"))
-        else:
-            test_dirs.append(os.path.join(cam_path, f"{i:05d}"))
+            with open(orientations_path, "w") as j:
+                json.dump(orientations_dict, j, indent=4)
+
+            if is_train:
+                train_dirs.append(os.path.join(cam_path, f"{i:05d}"))
+            else:
+                test_dirs.append(os.path.join(cam_path, f"{i:05d}"))
 
     # write file lists
     def _write_list_to_file(list_, filepath):
