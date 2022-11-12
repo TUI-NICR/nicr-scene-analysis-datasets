@@ -6,18 +6,19 @@ This repository contains code to prepare and use common datasets for scene analy
 
 Currently, this packages features the following datasets and annotations:
 
-| Dataset                                                               | Updated/Tested |   Type    | Semantic | Instance | Orientations |  Scene   |  Normal  | 3D Boxes | Extrinsics | Intrinsics |
-|:----------------------------------------------------------------------|:--------------:|:---------:|:--------:|:--------:|:------------:|:--------:|:--------:|:--------:|:----------:|:----------:|
-| [COCO](https://cocodataset.org/#home)                                 | v030/v040      | RGB       | &#10003; | &#10003; |              |          |          |          |            |            |
-| [Cityscapes](https://www.cityscapes-dataset.com/)                     | v030/v040      | RGB-D*    | &#10003; |          |              |          |          |          |            |            |
-| [Hypersim](https://machinelearning.apple.com/research/hypersim)       | v030/v040      | RGB-D     | &#10003; | &#10003; | (&#10003;)** | &#10003; | &#10003; | &#10003; | &#10003;   | &#10003;   |
-| [NYUv2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)     | v030/v040      | RGB-D     | &#10003; | &#10003; | &#10003;***  | &#10003; | &#10003; |          |            |            |
-| [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet-rgbd.html)  | v030/v040      | RGB-D     | &#10003; |          |              |          |          |          |            |            |
-| [SUNRGB-D](https://rgbd.cs.princeton.edu/)                            | v030/v040      | RGB-D     | &#10003; | &#10003; |   &#10003;   | &#10003; |          | &#10003; | &#10003;   | &#10003;   |
+| Dataset                                                               | Updated/Tested |   Type    | Semantic | Instance |  Orientations  |  Scene   |       Normal       | 3D Boxes | Extrinsics | Intrinsics |
+|:----------------------------------------------------------------------|:--------------:|:---------:|:--------:|:--------:|:--------------:|:--------:|:------------------:|:--------:|:----------:|:----------:|
+| [COCO](https://cocodataset.org/#home)                                 | v030/v040      | RGB       | &#10003; | &#10003; |                |          |                    |          |            |            |
+| [Cityscapes](https://www.cityscapes-dataset.com/)                     | v030/v040      | RGB-D\*   | &#10003; |          |                |          |                    |          |            |            |
+| [Hypersim](https://machinelearning.apple.com/research/hypersim)       | v030/v040      | RGB-D     | &#10003; | &#10003; | (&#10003;)\*\* | &#10003; | (&#10003;)\*\*\*\* | &#10003; | &#10003;   | &#10003;   |
+| [NYUv2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)     | v030/v040      | RGB-D     | &#10003; | &#10003; | &#10003;\*\*\* | &#10003; | &#10003;           |          |            |            |
+| [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet-rgbd.html)  | v030/v040      | RGB-D     | &#10003; |          |                |          |                    |          |            |            |
+| [SUNRGB-D](https://rgbd.cs.princeton.edu/)                            | v030/v040      | RGB-D     | &#10003; | &#10003; |   &#10003;     | &#10003; |                    | &#10003; | &#10003;   | &#10003;   |
 
 \* Both depth and disparity are available.  
 \*\* Orientations are available but not consistent for instances of the same semantic class (see Hypersim).  
 \*\*\* Annotated by hand in 3D for instances of some relevant semantic classes.  
+\*\*\*\* As of Nov 2022, [precomputed normals](https://cs.nyu.edu/~deigen/dnl/normals_gt.tgz) are not publicly available any longer. We are trying to reach the authors.
 
 ## License and Citations
 The source code is published under Apache 2.0 license, see [license file](LICENSE) for details.
@@ -176,6 +177,10 @@ For further details, we refer to the usage in our [EMSANet repository](https://g
 The dataset can be used as an iterator (detectron2 usually does this) and can then be mapped with the custom mappers to generate the correct layout of the data.
 
 ## Changelog
+__Version 0.4.1 (Now 12, 2022)__
+- *no dataset preparation related changes*
+- make normal extraction for NYUv2 dataset optional as the [precomputed normals](https://cs.nyu.edu/~deigen/dnl/normals_gt.tgz) are not publicly available any longer 
+
 __Version 0.4.0 (July 15, 2022)__
 - *no dataset preparation related changes*
 - Hypersim: [BREAKING CHANGE TO V030] enable fixed depth stats

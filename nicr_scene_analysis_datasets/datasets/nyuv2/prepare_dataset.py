@@ -49,6 +49,8 @@ DATASET_URL = 'http://horatio.cs.nyu.edu/mit/silberman/nyu_depth_v2/nyu_depth_v2
 
 # see: https://cs.nyu.edu/~deigen/dnl/
 # the file contains the precomputed surface normal
+# as of Nov 2022, this file is not publicly available any longer, we are trying
+# to reach the authors, normal extraction is optional for now
 DATASET_NORMAL_URL = 'https://cs.nyu.edu/~deigen/dnl/normals_gt.tgz'
 
 
@@ -68,11 +70,18 @@ def tar_file_to_cv2(tar, tar_filename):
 def main():
     # argument parser
     parser = ap.ArgumentParser(description='Prepare NYUv2 dataset.')
-    parser.add_argument('output_path', type=str,
+    parser.add_argument('output_path',
+                        type=str,
                         help='path where to store dataset')
-    parser.add_argument('--mat-filepath', default=None,
+    parser.add_argument('--mat-filepath',
+                        default=None,
                         help='filepath to NYUv2 mat file')
-    parser.add_argument('--normal-filepath', default=None,
+    parser.add_argument('--enable-normal-extraction',
+                        action='store_true',
+                        default=False,
+                        help='filepath to NYUv2 normal')
+    parser.add_argument('--normal-filepath',
+                        default=None,
                         help='filepath to NYUv2 normal')
     parser.add_argument('--instance-min-relative-area',
                         type=float,
@@ -94,15 +103,16 @@ def main():
         print(f"Downloading mat file to: '{mat_filepath}'")
         download_file(DATASET_URL, mat_filepath, display_progressbar=True)
 
-    if args.normal_filepath is None:
-        normal_filepath = os.path.join(gettempdir(), 'normal_gt.tgz')
-    else:
-        normal_filepath = os.path.expanduser(args.normal_filepath)
-    if not os.path.exists(normal_filepath):
-        print(f"Downloading precomputed normals")
-        download_file(DATASET_NORMAL_URL,
-                      normal_filepath,
-                      display_progressbar=True)
+    if args.enable_normal_extraction:
+        if args.normal_filepath is None:
+            normal_filepath = os.path.join(gettempdir(), 'normal_gt.tgz')
+        else:
+            normal_filepath = os.path.expanduser(args.normal_filepath)
+        if not os.path.exists(normal_filepath):
+            print(f"Downloading precomputed normals")
+            download_file(DATASET_NORMAL_URL,
+                          normal_filepath,
+                          display_progressbar=True)
 
     # create output path if not exist
     create_dir(output_path)
@@ -182,9 +192,10 @@ def main():
     }
 
     # normals
-    normal_tar = tarfile.open(normal_filepath)
-    normal_mask = np.zeros((480, 640), dtype=bool)
-    normal_mask[44:471, 40:601] = True
+    if args.enable_normal_extraction:
+        normal_tar = tarfile.open(normal_filepath)
+        normal_mask = np.zeros((480, 640), dtype=bool)
+        normal_mask[44:471, 40:601] = True
 
     # orientations
     # note that the orientations were labeled manually in 3d space, None means
@@ -232,8 +243,9 @@ def main():
             output_path, split_dir,
             NYUv2Meta.SEMANTIC_COLORED_DIR_FMT.format(13)
         )
-        normal_base_path = os.path.join(output_path, split_dir,
-                                        NYUv2Meta.NORMAL_DIR)
+        if args.enable_normal_extraction:
+            normal_base_path = os.path.join(output_path, split_dir,
+                                            NYUv2Meta.NORMAL_DIR)
         orientations_base_path = os.path.join(output_path, split_dir,
                                               NYUv2Meta.ORIENTATIONS_DIR)
         scene_class_base_path = os.path.join(output_path, split_dir,
@@ -249,7 +261,8 @@ def main():
         create_dir(labels_894_colored_base_path)
         create_dir(labels_13_colored_base_path)
         create_dir(labels_40_colored_base_path)
-        create_dir(normal_base_path)
+        if args.enable_normal_extraction:
+            create_dir(normal_base_path)
         create_dir(orientations_base_path)
         create_dir(scene_class_base_path)
 
@@ -325,20 +338,25 @@ def main():
                              label_13, colors[13])
 
             # normals
-            # get mask for normals as cv2 image
-            mask_img = tar_file_to_cv2(normal_tar,
-                                       f'normals_gt/masks/{idx:04d}.png')
-            # get normal image as cv2 image
-            # important: every valid normal vector in the dataset is allready
-            #            normalized to unit length
-            normal_img = tar_file_to_cv2(normal_tar,
-                                         f'normals_gt/normals/{idx:04d}.png')
-            # mask out all invalid normal vectors
-            # the value is set to 127 because after the image gets loaded,
-            # it is converted to a unit vector of length 0.
-            normal_img[mask_img == 0] = (127, 127, 127)
-            normal_path = os.path.join(normal_base_path, f'{idx:04d}.png')
-            cv2.imwrite(normal_path, normal_img)
+            if args.enable_normal_extraction:
+                # get mask for normals as cv2 image
+                mask_img = tar_file_to_cv2(
+                    normal_tar,
+                    f'normals_gt/masks/{idx:04d}.png'
+                )
+                # get normal image as cv2 image
+                # important: every valid normal vector in the dataset is allready
+                #            normalized to unit length
+                normal_img = tar_file_to_cv2(
+                    normal_tar,
+                    f'normals_gt/normals/{idx:04d}.png'
+                )
+                # mask out all invalid normal vectors
+                # the value is set to 127 because after the image gets loaded,
+                # it is converted to a unit vector of length 0.
+                normal_img[mask_img == 0] = (127, 127, 127)
+                normal_path = os.path.join(normal_base_path, f'{idx:04d}.png')
+                cv2.imwrite(normal_path, normal_img)
 
             # orientations
             orientations = orientations_for_split[split].get(f'{idx:04d}', {})
@@ -399,9 +417,10 @@ def main():
     if args.mat_filepath is None:
         print(f"Removing downloaded mat file: '{mat_filepath}'")
         os.remove(mat_filepath)
-    if args.normal_filepath is None:
-        print(f"Removing downloaded normal file: '{normal_filepath}'")
-        os.remove(normal_filepath)
+    if args.enable_normal_extraction:
+        if args.normal_filepath is None:
+            print(f"Removing downloaded normal file: '{normal_filepath}'")
+            os.remove(normal_filepath)
 
 
 if __name__ == '__main__':
