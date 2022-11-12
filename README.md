@@ -25,20 +25,23 @@ The source code is published under Apache 2.0 license, see [license file](LICENS
 
 If you use the source code, please cite the papers related to this work:
 
-**Efficient Multi-Task RGB-D Scene Analysis for Indoor Environments** ([arXiv](https://arxiv.org/abs/2207.04526)):
->Seichter, D., Fischedick, B., Köhler, M., Gross, H.-M.
+**Efficient Multi-Task RGB-D Scene Analysis for Indoor Environments** ([IEEE Xplore](https://ieeexplore.ieee.org/document/9892852), [arXiv](https://arxiv.org/abs/2207.04526)):
+> Seichter, D., Fischedick, B., Köhler, M., Gross, H.-M.
 *Efficient Multi-Task RGB-D Scene Analysis for Indoor Environments*,
-to appear in IEEE International Joint Conference on Neural Networks (IJCNN), 2022.
+in IEEE International Joint Conference on Neural Networks (IJCNN), pp. 1-10, 2022.
 
 ```bibtex
-@article{emsanet2022,
-title={Efficient Multi-Task RGB-D Scene Analysis for Indoor Environments},
-author={Seichter, Daniel and Fischedick, S{\"o}hnke and K{\"o}hler, Mona and Gross, Horst-Michael},
-journal={arXiv preprint arXiv:2207.04526},
-year={2022}
+@inproceedings{emsanet2022ijcnn,
+  title={Efficient Multi-Task RGB-D Scene Analysis for Indoor Environments},
+  author={Seichter, Daniel and Fischedick, S{\"o}hnke and K{\"o}hler, Mona and Gross, Horst-Michael},
+  booktitle={IEEE International Joint Conference on Neural Networks (IJCNN)},
+  year={2022},
+  volume={},
+  number={},
+  pages={1-10},
+  doi={10.1109/IJCNN55064.2022.9892852}
 }
 ```
-Note that the preprint was accepted to be published in IEEE International Joint Conference on Neural Networks (IJCNN) 2022.
 
 **Efficient and Robust Semantic Mapping for Indoor Environments** ([IEEE Xplore](https://ieeexplore.ieee.org/document/9812205), [arXiv](https://arxiv.org/pdf/2203.05836.pdf)):
 >Seichter, D., Langer, P., Wengefeld, T., Lewandowski, B., Höchemer, D., Gross, H.-M.
