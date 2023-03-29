@@ -258,6 +258,6 @@ class HypersimReaderBase(MIRAReaderBase):
                 box.center_transform(transform)
                 box_vector.append(box)
 
-            sample_mira['boxes'] = box_vector
+            sample_mira['boxes_gt'] = box_vector
 
         return sample_mira

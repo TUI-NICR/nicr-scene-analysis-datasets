@@ -93,7 +93,7 @@ class MIRAReaderBase(mirapy.Unit, AutoGetterSetter):
         self._ch_scene_gt_class = None
         self._ch_scene = None
         self._ch_scene_class = None
-        self._ch_boxes = None
+        self._ch_boxes_gt = None
 
     @property
     def split(self):
@@ -473,7 +473,7 @@ class MIRAReaderBase(mirapy.Unit, AutoGetterSetter):
         self._ch_scene_gt_class = self.publish('SceneGTClass', int)
 
         # boxes
-        self._ch_boxes = self.publish('BoxesGT', VectorOrientedBoundingBox3f)
+        self._ch_boxes_gt = self.publish('BoxesGT', VectorOrientedBoundingBox3f)
 
         # predicted instance
         if self._load_predicted_scene:
@@ -775,8 +775,9 @@ class MIRAReaderBase(mirapy.Unit, AutoGetterSetter):
             _post(self._ch_scene_gt, sample_mira['scene_gt'])
             _post(self._ch_scene_gt_class, sample_mira['scene_gt_class'])
 
-        if 'boxes' in sample_mira:
-            self._ch_boxes.post(sample_mira['boxes'], time_now, self._global_frame)
+        if 'boxes_gt' in sample_mira:
+            self._ch_boxes_gt.post(sample_mira['boxes_gt'], time_now,
+                                   self._global_frame)
 
         if self._load_predicted_scene:
             _post(self._ch_scene, sample_mira['scene'])
