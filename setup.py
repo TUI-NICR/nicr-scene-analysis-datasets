@@ -2,9 +2,11 @@
 """
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 .. codeauthor:: Soehnke Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
+
 """
 import os
-from setuptools import setup, find_packages
+from setuptools import find_packages
+from setuptools import setup
 import sys
 
 
@@ -43,6 +45,11 @@ def run_setup():
         'termcolor',
     ]
 
+    requirements_3d = [
+        'open3d',
+        'plyfile',
+    ]
+
     # setup
     setup(name='nicr_scene_analysis_datasets',
           version='{}.{}.{}'.format(*version),
@@ -51,16 +58,26 @@ def run_setup():
           author='Daniel Seichter, Soehnke Fischedick',
           author_email='daniel.seichter@tu-ilmenau.de, '
                        'soehnke-benedikt.fischedick@tu-ilmenau.de',
-          license='Copyright 2020-2022, Neuroinformatics and Cognitive Robotics'
+          license='Copyright 2020-2023, Neuroinformatics and Cognitive Robotics'
                   'Lab TU Ilmenau, Ilmenau, Germany',
           packages=find_packages(),
           install_requires=requirements_general,
           extras_require={
               'withpreparation': requirements_prepare,
+              'with3d': requirements_3d,
               'test': [
                   'pytest>=3.0.2',
                   'torch'    # should be installed using conda
               ]
+          },
+          entry_points={
+              'console_scripts': [
+                  'nicr_sa_prepare_dataset=nicr_scene_analysis_datasets.scripts.prepare_dataset:main',
+                  'nicr_sa_prepare_labeled_point_clouds=nicr_scene_analysis_datasets.scripts.prepare_labeled_point_clouds:main',
+                  'nicr_sa_depth_viewer=nicr_scene_analysis_datasets.scripts.viewer_depth:main',
+                  'nicr_sa_semantic_instance_viewer=nicr_scene_analysis_datasets.scripts.viewer_semantic_instance:main',
+                  'nicr_sa_labeled_pc_viewer=nicr_scene_analysis_datasets.scripts.viewer_labeled_point_cloud:main'
+              ],
           },
           include_package_data=True)
 

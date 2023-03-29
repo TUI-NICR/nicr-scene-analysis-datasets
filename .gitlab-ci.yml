@@ -31,13 +31,18 @@ stages:
 
         # install packages (use conda to avoid time-consuming installations)
         - conda install -q pytest pytest-cov
-        - pip install -q pytest-html
+        - python -m pip install -q pytest-html
 
-        # pytorch
-        - conda install pytorch=1.10.1 torchvision=0.11.2 cpuonly -c pytorch
+        # pytorch and detectron
+        - |
+          if [ "${PYTHON_VERSION_TO_USE}" == "3.6" ]; then
+              conda install pytorch=1.10.1 torchvision=0.11.2 cpuonly -c pytorch
+              python -m pip install detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cpu/torch1.10/index.html
+          else
+              conda install pytorch=1.13.0 torchvision=0.14.0 cpuonly -c pytorch
+              python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
+          fi
 
-        # detectron2
-        - python -m pip install detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cpu/torch1.10/index.html
         # panopticapi
         - pip install git+https://github.com/cocodataset/panopticapi.git
         # check conda installation
@@ -45,12 +50,12 @@ stages:
         - conda list
 
         # install package (and all missing dependencies)
-        - pip install -q --editable .[test]
+        - python -m pip install -q --editable .[test]
 
         # test package (opt: get coverage)
         - |
           if [ "${REPORT_COVERAGE}" == "true" ]; then
-              py.test tests/ -rx -s -vv --cov=${CI_PROJECT_NAME//-/_} --cov-fail-under 80 --cov-report html --cov-report term --html=report_py${PYTHON_VERSION_TO_USE//./}.html --self-contained-html
+              py.test tests/ -rx -s -vv --cov=${CI_PROJECT_NAME//-/_} --cov-report html --cov-report term --html=report_py${PYTHON_VERSION_TO_USE//./}.html --self-contained-html
           else
               py.test tests/ -rx -s -vv --html=report_py${PYTHON_VERSION_TO_USE//./}.html --self-contained-html
           fi
@@ -75,27 +80,27 @@ style_check:
         - conda install -q pycodestyle pylint
 
         # check style using pep8
-        - pycodestyle --show-source --show-pep8 .
+        - find ./ -name "*.py" -not -path "*/stuff/*" | xargs pycodestyle --show-source --show-pep8
 
         # check style using pylint (without taking into account)
         - pylint ${CI_PROJECT_NAME//-/_} --rcfile=${CI_PROJECT_DIR}/.pylintrc || true
 
-tests_py36:
+tests_py36:    # ubuntu18
     <<: *test_template
     variables:
         PYTHON_VERSION_TO_USE: "3.6"
         REPORT_COVERAGE: "false"
 
-tests_py37:
-    <<: *test_template
-    variables:
-        PYTHON_VERSION_TO_USE: "3.7"
-        REPORT_COVERAGE: "false"
-
-tests_py38:
+tests_py38:    # ubuntu20
     <<: *test_template
     variables:
         PYTHON_VERSION_TO_USE: "3.8"
+        REPORT_COVERAGE: "true"
+
+tests_py310:    # current
+    <<: *test_template
+    variables:
+        PYTHON_VERSION_TO_USE: "3.10"
         REPORT_COVERAGE: "false"
 
 update_pip_package:

@@ -33,17 +33,11 @@ N_SCENE_CLASSES = 22
 @pytest.mark.parametrize('depth_mode', ('raw', ))
 @pytest.mark.parametrize('subsample', (None, 1, 2, 5, 10, 20))
 def test_dataset(split, depth_mode, subsample):
-    sample_keys = (
-        'identifier',
-        'rgb', 'rgb_intrinsics', 'depth', 'depth_intrinsics',
-        'extrinsics',
-        'semantic', 'instance', 'orientations', '3d_boxes', 'scene', 'normal'
-    )
     dataset = Hypersim(
         dataset_path=DATASET_PATH_DICT['hypersim'],
         split=split,
         subsample=subsample,
-        sample_keys=sample_keys,
+        sample_keys=Hypersim.get_available_sample_keys(split),
         depth_mode=depth_mode
     )
 
@@ -113,7 +107,7 @@ def test_dataset(split, depth_mode, subsample):
             # void
             if instance_id == 0:
                 continue
-            assert(instance_id in sample['orientations'])
+            assert (instance_id in sample['orientations'])
 
         if i >= 9:
             break

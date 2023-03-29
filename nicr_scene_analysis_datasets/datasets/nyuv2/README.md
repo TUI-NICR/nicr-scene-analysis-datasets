@@ -10,6 +10,6 @@ For more details, see: [NYU Depth Dataset V2](https://cs.nyu.edu/~silberman/data
 ## Prepare dataset
 ```bash
 # general usage
-python -m nicr_scene_analysis_datasets.datasets.nyuv2.prepare_dataset \
+nicr_sa_prepare_dataset nyuv2 \
     /path/where/to/store/nyuv2
 ```

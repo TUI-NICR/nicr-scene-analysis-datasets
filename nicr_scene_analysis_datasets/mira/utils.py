@@ -3,8 +3,10 @@
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 """
 import cv2
+import numpy as np
 
 from PythonImageWrapper import Img
+from PythonImageWrapper import Img8U1
 
 
 def to_mira_img(img, rgb2bgr=False):
@@ -30,6 +32,17 @@ def to_mira_img(img, rgb2bgr=False):
     cv_type = getattr(cv2, f'CV_{t}C{n}')
 
     img_mira = Img(w, h, cv_type, n)
+    img_mira.setMat(img)
+
+    return img_mira
+
+
+def to_mira_img8u1(img):
+    assert img.dtype == 'uint8'
+    assert img.ndim == 2
+
+    h, w = img.shape
+    img_mira = Img8U1(w, h)
     img_mira.setMat(img)
 
     return img_mira

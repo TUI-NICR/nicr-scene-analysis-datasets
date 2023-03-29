@@ -93,6 +93,12 @@ class _LabelListBase:
         else:
             return self._name_to_idx(value)
 
+    def __contains__(self, value: Union[_LabelBase, str]) -> bool:
+        if isinstance(value, _LabelBase):
+            return value in self.label_list
+        else:
+            return value in self._class_names
+
     @property
     def class_names(self) -> Tuple[str]:
         return self._class_names

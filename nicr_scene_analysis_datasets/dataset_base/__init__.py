@@ -19,6 +19,7 @@ from ._config import DatasetConfig    # noqa: F401
 
 from ._meta import DepthStats    # noqa: F401
 
+from ._concat_dataset import ConcatDataset    # noqa: F401
 from ._depth_dataset import DepthDataset    # noqa: F401
 from ._rgb_dataset import RGBDataset    # noqa: F401
 from ._rgbd_dataset import RGBDDataset    # noqa: F401

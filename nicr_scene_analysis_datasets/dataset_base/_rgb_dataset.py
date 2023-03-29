@@ -27,7 +27,7 @@ class RGBDataset(DatasetBase):
         )
 
     @abc.abstractmethod
-    def _load_rgb(self, idx) -> np.array:
+    def _load_rgb(self, idx) -> np.ndarray:
         pass
 
     def _load_rgb_intrinsics(self, idx) -> IntrinsicCameraParametersNormalized:

@@ -23,16 +23,11 @@ N_SCENE_CLASSES = 27
 @pytest.mark.parametrize('semantic_n_classes', (894, 40, 13))
 @pytest.mark.parametrize('depth_mode', ('refined', 'raw'))
 def test_dataset(split, semantic_n_classes, depth_mode):
-    sample_keys = (
-        'identifier',
-        'rgb', 'depth',
-        'semantic', 'instance', 'orientations', 'scene', 'normal'
-    )
     dataset = NYUv2(
         dataset_path=DATASET_PATH_DICT['nyuv2'],
         split=split,
         depth_mode=depth_mode,
-        sample_keys=sample_keys,
+        sample_keys=NYUv2.get_available_sample_keys(split),
         semantic_n_classes=semantic_n_classes
     )
 

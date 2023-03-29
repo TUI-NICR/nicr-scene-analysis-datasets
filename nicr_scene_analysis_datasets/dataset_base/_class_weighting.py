@@ -27,7 +27,7 @@ def compute_class_weights(
     n_threads: int = 1,
     debug: bool = False,
     verbose: bool = True
-) -> np.array:
+) -> np.ndarray:
     assert weight_mode in KNOWN_CLASS_WEIGHTINGS
 
     if verbose:

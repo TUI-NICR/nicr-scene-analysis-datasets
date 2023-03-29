@@ -111,4 +111,23 @@ ENV/
 .hdf5
 core
 
+inference_time*.pdf
+inference_time*.json
+onnx_models/*.onnx
+*.onnx
+onnx_models/*.trt
+*.pth
+*.tar
+*.pickle
+datasets/*
+!datasets/.gitkeep
+trained_models/*
+!trained_models/.gitkeep
+todo.txt
+*.pdf
+results
+*.svg
 .pytest_cache
+.vscode
+
+stuff/hypersim_instance_semantic_overlaps/hypersim_instances

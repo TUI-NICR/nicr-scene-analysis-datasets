@@ -11,6 +11,38 @@ from nicr_scene_analysis_datasets import SUNRGBD
 from nicr_scene_analysis_datasets.utils.testing import DATASET_PATH_DICT
 
 
+def test_filter_camera():
+    # we use SunRGBD as it contains multiple cameras with samples of different
+    # spatial resolution which may affect caching in a bad way
+
+    # create dataset
+    dataset = SUNRGBD(
+        dataset_path=DATASET_PATH_DICT['sunrgbd'],
+        sample_keys=('rgb',),
+        use_cache=False
+    )
+    n_samples = len(dataset)
+
+    # test filter_camera with context manager
+    camera = 'kv1'
+    with dataset.filter_camera(camera):
+        assert dataset.camera == camera
+        assert len(dataset) == 1073     # yes, this number is fixed ;)
+    # everything should be back to normal
+    assert dataset.camera is None
+    assert len(dataset) == n_samples
+
+    # test filter_camera without context manager
+    camera = 'kv1'
+    dataset.filter_camera(camera)
+    assert dataset.camera == camera
+    assert len(dataset) == 1073     # yes, this number is fixed ;)
+    dataset.filter_camera(None)
+    # everything should be back to normal
+    assert dataset.camera is None
+    assert len(dataset) == n_samples
+
+
 def test_caching():
     # as NYUv2 is quite small, we additionally test some functions
     dataset = NYUv2(

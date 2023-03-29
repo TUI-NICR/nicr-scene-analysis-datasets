@@ -36,30 +36,54 @@ DATASET_BOX3D_URL = 'https://rgbd.cs.princeton.edu/data/SUNRGBDMeta3DBB_v2.mat'
 TMP_DIR = 'tmp'
 
 
-def main():
+def main(args=None):
     # argument parser
     parser = ap.ArgumentParser(
-        description='Prepare SUNRGB-D dataset.')
-    parser.add_argument('output_path', type=str,
-                        help="Path where to store dataset")
-    parser.add_argument('--toolbox-filepath', default=None,
-                        help="Filepath to SUNRGBD toolbox file.")
-    parser.add_argument('--data-filepath', default=None,
-                        help="Filepath to SUNRGBD data zip file.")
-    parser.add_argument('--box-filepath', default=None,
-                        help="filepath to SUNRGBD 3d bounding boxes")
-    parser.add_argument('--create-instances', default=False,
-                        action="store_true",
-                        help="Whether the instances should be created by "
-                             "matching 3d boxes into a pointcloud.")
-    parser.add_argument('--copy-instances-from-nyuv2', default=False,
-                        action="store_true",
-                        help="whether the orientations of SUNRGBD should "
-                             "be matched to NYUv2.")
-    parser.add_argument('--nyuv2-path', default="", type=str,
-                        help="Path to NYUv2 dataset for matching.")
+        formatter_class=ap.ArgumentDefaultsHelpFormatter,
+        description='Prepare SUNRGB-D dataset.'
+    )
+    parser.add_argument(
+        'output_path',
+        type=str,
+        help="Path where to store dataset."
+    )
+    parser.add_argument(
+        '--toolbox-filepath',
+        default=None,
+        help="Filepath to SUNRGBD toolbox file."
+    )
+    parser.add_argument(
+        '--data-filepath',
+        default=None,
+        help="Filepath to SUNRGBD data zip file."
+    )
+    parser.add_argument(
+        '--box-filepath',
+        default=None,
+        help="Filepath to SUNRGBD 3d bounding boxes."
+    )
+    parser.add_argument(
+        '--create-instances',
+        default=False,
+        action="store_true",
+        help="Whether the instances should be created by matching 3d boxes "
+             "with the point cloud."
+    )
+    parser.add_argument(
+        '--copy-instances-from-nyuv2',
+        default=False,
+        action="store_true",
+        help="Whether instances and orientations should copied from (already "
+             "prepared!) NYUv2 dataset."
+    )
+    parser.add_argument(
+        '--nyuv2-path',
+        default="",
+        type=str,
+        help="Path to NYUv2 dataset for matching."
+    )
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     # output path
     output_path = os.path.expanduser(args.output_path)

@@ -19,15 +19,10 @@ N_SAMPLES = {'train': 2975, 'valid': 500, 'test': 1525}
 def test_dataset(split,
                  semantic_n_classes,
                  disparity_instead_of_depth):
-    sample_keys = (
-        'identifier',
-        'rgb', 'depth',
-        'semantic'
-    )
     dataset = Cityscapes(
         dataset_path=DATASET_PATH_DICT['cityscapes'],
         split=split,
-        sample_keys=sample_keys,
+        sample_keys=Cityscapes.get_available_sample_keys(split),
         depth_mode='raw',
         disparity_instead_of_depth=disparity_instead_of_depth,
         semantic_n_classes=semantic_n_classes
@@ -60,8 +55,13 @@ def test_dataset(split,
         # inputs: rgb and depth
         assert sample['rgb'].ndim == 3
         assert sample['depth'].ndim == 2
-        # semantic
-        assert sample['semantic'].ndim == 2
+
+        if 'test' != split:
+            # note that there are annotation files for test but they are empty
+            # semantic
+            assert sample['semantic'].ndim == 2
+            # instance
+            assert sample['instance'].ndim == 2
 
         if i >= 9:
             break

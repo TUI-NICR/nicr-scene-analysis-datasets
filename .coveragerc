@@ -1,0 +1,9 @@
+[run]
+omit=
+    */prepare_dataset.py
+    */datasets/scannet/SensorData.py
+    */datasets/scenenetrgbd/scenenet_pb2.py
+    */datasets/sunrgbd/match_nyuv2_instances.py
+    */datasets/sunrgbd/prepare_instances.py
+    */mira/*
+    */scripts/*

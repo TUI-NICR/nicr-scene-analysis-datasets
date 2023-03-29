@@ -1,0 +1,38 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "create hypersim ply",
+            "type": "python",
+            "request": "launch",
+            "module": "nicr_scene_analysis_datasets.scripts.create_labeled_point_clouds",
+            "console": "integratedTerminal",
+            "args": [
+                "hypersim",
+                "/datasets_nas/nicr_scene_analysis_datasets/version_052/hypersim",
+                "./test",
+                "--split", "train",
+                "--voxel-size", "0.05",
+                "--max-depth", "20",
+                "--write-scannet-label",
+            ],
+            "env": {
+            },
+        },
+        {
+            "name": "create hypersim",
+            "type": "python",
+            "request": "launch",
+            "module": "nicr_scene_analysis_datasets.datasets.hypersim.prepare_dataset",
+            "console": "integratedTerminal",
+            "args": [
+                "/datasets_nas/nicr_scene_analysis_datasets/version_052/hypersim",
+                "/datasets_nas/segmentation/hypersim/apple-hypersim",
+                "--additional-subsamples", "2", "5", "10", "20",
+                "--n-processes", "16",
+            ],
+            "env": {
+            },
+        },
+    ]
+}

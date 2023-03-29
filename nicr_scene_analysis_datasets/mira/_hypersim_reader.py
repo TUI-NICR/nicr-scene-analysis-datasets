@@ -2,376 +2,77 @@
 """
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 """
-import os
-import signal
-from time import time
-
 import numpy as np
+from scipy.spatial.transform import Rotation
 
 import mirapy
 from PythonCameraIntrinsicWrapper import PinholeCameraIntrinsicNormalized
-from PythonDepthCameraIntrinsicWrapper import DepthCameraIntrinsicNormalized
-from PythonImageWrapper import Img
-from PythonImageWrapper import Img8U1
+from PythonCameraIntrinsicWrapper import DepthCameraIntrinsicNormalized
+from OrientedBoundingBoxWrapper import OrientedBoundingBox3f, VectorOrientedBoundingBox3f
 
 from .. import Hypersim
-from .utils import AutoGetterSetter
+from ._base_reader import MIRAReaderBase
 from .utils import to_mira_img
+from .utils import to_mira_img8u1
 
 
-LOG_LEVEL = mirapy.WARNING
+class HypersimReaderBase(MIRAReaderBase):
+    def __init__(
+        self,
+        feedback_channel_type=None,
+        sample_keys=('extrinsics',
+                     'rgb', 'rgb_intrinsics',
+                     'depth', 'depth_intrinsics',
+                     'semantic',
+                     'instance',
+                     'scene')
+    ):
+        super().__init__(feedback_channel_type)
 
-
-class HypersimReaderBase(mirapy.Unit, AutoGetterSetter):
-    def __init__(self, feedback_channel_type=None):
-        super().__init__()
-
-        # use None if type does not matter (void channel)
-        self._feedback_channel_type = feedback_channel_type
-
-        # member ---------------------------------------------------------------
-        self._dataset = None
-        self._dataset_meta = {}
-        self._scenes = None
-        self._cur_scene_idx = -1
-        self._cameras_in_scene = None
-        self._cur_camera_idx = -1
-        self._cur_idx = -1
-
-        self._frame = None
-
-        self._done = False
-        self._start_time = -1
-        self._iterating = False
-        self._last_time = -1
-
-        self._kill_time = -1
-
-        self._ignore_next_feedback = False
+        self._sample_keys = sample_keys
 
         # reflected members ----------------------------------------------------
-        self._dataset_basepath = None
-        self._split = 'test'
-        self._subsample = 1
-        self._scene_filter_str = ''
-        self._zero_depth_for_void = False
-        self._start_delay = 5    # seconds
-        self._paused = False
-        self._watchdog_trigger_delay = 5
-        self._feedback_channel = None
-        self._reference_frame = '/GlobalFrame'
-        self._load_predicted_segmentation = False
-        self._predicted_segmentation_path = None
-        self._predicted_segmentation_dir = 'semantic_40_topk'
-        self._predicted_segmentation_topk = 3
-        self._kill_when_done = False
+        self._dataset_use_domestic_scene_classes = None
 
-        # subscribed channels --------------------------------------------------
-        self._ch_feedback = None
-
-        # published channels ---------------------------------------------------
-        self._ch_color_instrinsic = None
-        self._ch_depth_instrinsic = None
-        self._ch_color_img = None
-        self._ch_depth_img = None
-        self._ch_segmentation = None
-        self._chs_segmentation_classes = []
-
-    @property
-    def split(self):
-        return self._split
-
-    @property
-    def cur_scene(self):
-        if self._dataset is None:
-            # dataset not parsed so far
-            return ''
-        return self._scenes[self._cur_scene_idx]
-
-    @property
-    def cur_camera(self):
-        if self._dataset is None:
-            # dataset not parsed so far
-            return ''
-        return self._cameras_in_scene[self._cur_camera_idx]
-
-    @property
-    def cur_basename(self):
-        if self._dataset is None:
-            # dataset not parsed so far
-            return ''
-        return self._dataset_meta[self.cur_scene][self.cur_camera][self.cur_idx][1]
-
-    @property
-    def cur_idx(self):
-        if self._dataset is None:
-            # dataset not parsed so far
-            return -1
-        return self._cur_idx
-
-    @property
-    def cur_n(self):
-        if self._dataset is None:
-            # dataset not parsed so far
-            return -1
-        return len(self._dataset_meta[self.cur_scene][self.cur_camera])
-
-    @property
-    def reference_frame(self):
-        return self._reference_frame
+        self._last_color_intrinsics = None
+        self._last_depth_intrinsics = None
 
     def reflect(self, r):
-        r.member(
-            'DatasetBasepath',
-            str,
-            self._rget_dataset_basepath,
-            self._rset_dataset_basepath,
-            "Path to nicr-scene-analysis-datasets folder for hypersim."
-        )
-        r.member(
-            'Split',
-            str,
-            self._rget_split,
-            self._rset_split,
-            "Dataset split to use 'train', 'valid' or 'test'."
-        )
-        r.member(
-            'Subsample',
-            int,
-            self._rget_subsample,
-            self._rset_subsample,
-            "Dataset subsampling to use: '1' (no subsampling), '2', '5', '10', "
-            "or '20'"
-        )
-        r.member(
-            'SceneFilter',
-            str,
-            self._rget_scene_filter_str,
-            self._rset_scene_filter_str,
-            "/-separated list of scenes to filter or empty for all scenes."
-        )
-        r.member(
-            'ZeroDepthForVoid',
+        super().reflect(r)
+
+        def add_member_roproperty(name, type_, getter, setter, desc, *args):
+            # use args to pass additional arguments such as a default
+            r.member(name, type_, getter, setter, desc, *args)
+            r.roproperty(name, type_, getter, desc)
+
+        # dataset-related properties -------------------------------------------
+        add_member_roproperty(
+            'DatasetUseDomesticSceneClasses',
             bool,
-            self._rget_zero_depth_for_void,
-            self._rset_zero_depth_for_void,
-            "Set depth value for void pixels (class index 0) to zero. This "
-            "might be useful for subsequent processing steps such as mapping."
-        )
-        r.member(
-            'StartDelay',
-            float,
-            self._rget_start_delay,
-            self._rset_start_delay,
-            "Number of seconds to wait before posting the first data."
-        )
-        r.property(
-            'Paused',
-            bool,
-            self._rget_paused,
-            self._set_paused,
-            "Pause reader."
-        )
-        r.property(
-            'WatchdogTriggerDelay',
-            float,
-            self._rget_watchdog_trigger_delay,
-            self._rset_watchdog_trigger_delay,
-            "Trigger next step if there was no new data on the feedback "
-            "channel after a certain amount of seconds. '-1' disables the "
-            "watchdog trigger."
-        )
-        r.member(
-            'FeedbackChannel',
-            str,
-            self._rget_feedback_channel,
-            self._rset_feedback_channel,
-            "Channel to wait for data before posting the next frame."
-        )
-        r.member(
-            'ReferenceFrame',
-            str,
-            self._rget_reference_frame,
-            self._rset_reference_frame,
-            "Reference frame for posted data."
-        )
-        r.member(
-            'LoadPredictedSegmentation',
-            bool,
-            self._rget_load_predicted_segmentation,
-            self._rset_load_predicted_segmentation,
-            "Whether to load predicted segmentation as well. Note that the "
-            "segmentation is not part of the actual dataset, see "
-            "`PredictedSegmentationPath`."
-        )
-        r.member(
-            'PredictedSegmentationPath',
-            str,
-            self._rget_predicted_segmentation_path,
-            self._rset_predicted_segmentation_path,
-            "Path to stored predicted segmentation."
-        )
-        r.member(
-            'PredictedSegmentationDir',
-            str,
-            self._rget_predicted_segmentation_dir,
-            self._rset_predicted_segmentation_dir,
-            "Name of directory containing the predicted segmentation."
-        )
-        r.member(
-            'PredictedSegmentationTopK',
-            int,
-            self._rget_predicted_segmentation_topk,
-            self._rset_predicted_segmentation_topk,
-            "TopK to use for loading predicted segmentation"
-        )
-        r.member(
-            'KillMIRAWhenDone',
-            bool,
-            self._rget_kill_when_done,
-            self._rset_kill_when_done,
-            "Kill MIRA 5 seconds after dataset processing is done."
+            self._rget_dataset_use_domestic_scene_classes,
+            self._rset_dataset_use_domestic_scene_classes,
+            "Use domestic scene classes (ground-truth scene only).",
+            False
         )
 
-        # for reporting current status
-        r.roproperty(
-            'CurrentScene',
-            str,
-            self._get_scene,
-            "Current scene"
-        )
-        r.roproperty(
-            'CurrentCamera',
-            str,
-            self._get_camera,
-            "Current camera in scene"
-        )
-        r.roproperty(
-            'Progress',
-            str,
-            self._get_progress,
-            "Progress in current camera of current scene"
-        )
-        r.roproperty(
-            'ProgressCameras',
-            str,
-            self._get_progress_cameras,
-            "Progress in cameras of current scene"
-        )
-        r.roproperty(
-            'ProgressScenes', str,
-            self._get_progress_scenes,
-            "Progress in scenes"
-        )
-
-    def _get_scene(self):
-        return self.cur_scene
-
-    def _get_camera(self):
-        return self.cur_camera
-
-    @staticmethod
-    def _format_progress(n, total):
-        return f'{n}/{total} ({(n)/total*100: 3.0f}%)'
-
-    def _get_progress(self):
-        if self._done:
-            "Done"
-        if not self._iterating:
-            return ''
-        return HypersimReaderBase._format_progress(self.cur_idx+1, self.cur_n)
-
-    def _get_progress_cameras(self):
-        if not self._iterating:
-            return ''
-        return HypersimReaderBase._format_progress(self._cur_camera_idx+1,
-                                                   len(self._cameras_in_scene))
-
-    def _get_progress_scenes(self):
-        if not self._iterating:
-            return ''
-        return HypersimReaderBase._format_progress(self._cur_scene_idx+1,
-                                                   len(self._dataset_meta))
-
-    def _set_paused(self, value):
-        self._paused = value
-        if not self._paused and self._iterating:
-            self.start()
-
-    def initialize(self):
-        # publish frames -------------------------------------------------------
-        parent_frame = self.resolveName(self._reference_frame)
-
-        self._frame = self.resolveName('ImageFrame')
-        self.addTransformLink(self._frame, parent_frame)
-
-        # publish channels -----------------------------------------------------
-        self.bootup("Publishing channels")
-        self._ch_color_instrinsic = self.publish(
-            'ColorIntrinsic',
-            PinholeCameraIntrinsicNormalized
-        )
-        self._ch_depth_instrinsic = self.publish(
-            'DepthIntrinsic',
-            DepthCameraIntrinsicNormalized
-        )
-        self._ch_color_img = self.publish('ColorImage', Img)
-        self._ch_depth_img = self.publish('DepthImage', Img)
-        self._ch_gt = self.publish('GroundTruth', Img)
-        self._ch_gt_classes = self.publish('GroundTruthClasses', Img8U1)
-        if self._load_predicted_segmentation:
-            self._ch_segmentation = self.publish('Segmentation', Img)
-            for i in range(self._predicted_segmentation_topk):
-                ch = self.publish(f'SegmentationClasses_{i}', Img8U1)
-                self._chs_segmentation_classes.append(ch)
-
-        # subscribe channels ---------------------------------------------------
-        self.bootup("Subscribing channels")
-        self._ch_feedback = self.subscribe(
-            self._feedback_channel,
-            self._feedback_channel_type,
-            self.cb_feedback
-        )
-
-        # post intrinsics ------------------------------------------------------
-        self.bootup("Posting rgb and depth intrinsic")
-
-        # there is only one camera, thus, intrinsics do not change
-        # note: both are already normalized
-        camera = Hypersim.CAMERAS[0]
-        color_intrinsics = Hypersim.RGB_INTRINSICS_NORMALIZED[camera]
-        depth_intrinsics = Hypersim.DEPTH_INTRINSICS_NORMALIZED[camera]
-
-        color_intrinsic = PinholeCameraIntrinsicNormalized(
-            color_intrinsics['fx'], color_intrinsics['fy'],
-            color_intrinsics['cx'], color_intrinsics['cy'],
-            color_intrinsics['k1'], color_intrinsics['k2'],
-            color_intrinsics['p1'], color_intrinsics['p2']
-        )
-        self._ch_color_instrinsic.post(color_intrinsic)
-
-        # depth camera intrinsic (same as rgb but with parameter a)
-        depth_intrinsic = DepthCameraIntrinsicNormalized(
-            color_intrinsic, depth_intrinsics['a']
-        )
-        self._ch_depth_instrinsic.post(depth_intrinsic)
-
-        # parse dataset --------------------------------------------------------
-        self.bootup("Parsing dataset")
-
-        # just retrieve all sample identifiers and parse dataset
-        dataset = Hypersim(
+    def parse_dataset(self):
+        # simply retrieve all sample identifiers
+        identifier_dataset = Hypersim(
             dataset_path=self._dataset_basepath,
-            split=self._split,
-            subsample=self._subsample,
+            split=self._dataset_split,
+            subsample=self._dataset_subsample,
+            scene_use_indoor_domestic_labels=self._dataset_use_domestic_scene_classes,
             sample_keys=('identifier',)
         )
-        for idx, s in enumerate(dataset):
+        for idx, s in enumerate(identifier_dataset):
+            # unpack identifier, e.g., (ai_001_010, cam_00, 0000)
             scene, camera, id_ = s['identifier']
 
-            # apply scene filter
-            if self._scene_filter_str:
-                if scene not in self._scene_filter_str:
+            # apply identifier filter
+            if self._dataset_filter_str:
+                patterns = self._dataset_filter_str.split(',')
+                if not any(p.strip() in f'{scene}/{camera}/{id_}'
+                           for p in patterns):
                     continue
 
             if scene not in self._dataset_meta:
@@ -384,299 +85,179 @@ class HypersimReaderBase(mirapy.Unit, AutoGetterSetter):
         # load full dataset
         self._dataset = Hypersim(
             dataset_path=self._dataset_basepath,
-            split=self._split,
-            subsample=self._subsample,
-            sample_keys=('identifier', 'extrinsics',
-                         'rgb', 'depth',
-                         'semantic')
+            split=self._dataset_split,
+            subsample=self._dataset_subsample,
+            scene_use_indoor_domestic_labels=self._dataset_use_domestic_scene_classes,
+            sample_keys=(
+                'identifier',
+                *self._sample_keys
+            )
         )
 
-        mirapy.log(LOG_LEVEL, f"{len(self._dataset_meta)} scenes found.")
+    def process_sample(self, sample):
+        sample_mira = {}
 
-    def reset(self, scene_idx=0, camera_idx=0, idx=0):
-        # set up scenes and select first
-        self._scenes = list(self._dataset_meta.keys())
-        self._cur_scene_idx = scene_idx
-
-        # set up cameras is current scene and select first
-        self._cameras_in_scene = list(self._dataset_meta[self.cur_scene].keys())
-        self._cur_camera_idx = camera_idx
-
-        # set up current images in camera
-        self._cur_idx = idx-1    # -1 since index is first incremented
-
-        self._start_time = -1
-        self._last_time = -1
-
-        self._iterating = False
-        self._done = False
-
-    def start(self):
-        if not self._iterating:
-            # we start iterating
-            self.cb_dataset_start()
-
-            self.cb_scene_start()
-            self.cb_camera_start()
-
-        # start / resume
-        self._iterating = True
-
-        # self.process_next_frame()
-        # let the watchdog start iterating to ensure everything is loaded
-        mirapy.log(LOG_LEVEL, f"Watchdog will start iterating soon.")
-        self._last_time = time()
-
-    def pause_resume(self, pause=None):
-        if pause is None:
-            self._paused = not self._paused
-        else:
-            self._paused = pause
-
-    def ignore_next_feedback(self):
-        self._ignore_next_feedback = True
-
-    def cb_scene_start(self):
-        pass
-
-    def cb_scene_end(self):
-        pass
-
-    def cb_camera_start(self):
-        pass
-
-    def cb_camera_end(self):
-        pass
-
-    def cb_dataset_start(self):
-        pass
-
-    def cb_dataset_end(self):
-        mirapy.log(LOG_LEVEL, f"Done")
-        if self._kill_when_done:
-            self._kill_time = time() + 5
-
-    def cb_watchdog_triggered(self):
-        pass
-
-    def cb_feedback(self, channel_read):
-        if self._ignore_next_feedback:
-            self._ignore_next_feedback = False
-            mirapy.log(LOG_LEVEL, f"Feedback skipped")
-            return
-        self.process_next_frame()
-
-    def load_predicted_segmentation(self, identifier):
-        fp = os.path.join(self._predicted_segmentation_path,
-                          self._split,
-                          self._predicted_segmentation_dir,
-                          *identifier)
-        fp += '.npy'
-
-        # segmentation is of shape (topk, h, w) with each element equal to
-        # class+score, while it is ensured that score < 1
-        segmentation = np.load(fp)
-
-        # limit to topk
-        if segmentation.shape[0] < self._predicted_segmentation_topk:
-            mirapy.log(LOG_LEVEL,
-                       "`PredictedSegmentationTopK` is larger than the number "
-                       f"of channels in the loaded segmentaton: '{fp}'.")
-        segmentation = segmentation[:self._predicted_segmentation_topk, ...]
-
-        # convert to channels last
-        segmentation = segmentation.transpose(1, 2, 0)
-        segmentation = np.ascontiguousarray(segmentation)    # <- important
-
-        # note, we do not load the images for the classes!
-        segmentation_classes = segmentation.astype('uint8')    # < 256 classes
-
-        return segmentation, segmentation_classes
-
-    def process_next_frame(self):
-        if self._done:
-            return
-
-        if self._paused:
-            return
-
-        if not self._iterating:
-            return
-
-        if self._cur_idx+1 == self.cur_n:
-            # go to next camera / scene
-            if self._cur_camera_idx < len(self._cameras_in_scene)-1:
-                # end of camera reached
-                self.cb_camera_end()
-
-                if not self._iterating:
-                    # reset was called in callback
-                    return
-
-                # go to next camera
-                self._cur_camera_idx += 1
-                self._cur_idx = -1
-                self.cb_camera_start()
-
-                if self._watchdog_trigger_delay == -1:
-                    # there is no watchdog, so trigger next frame
-                    return self.process_next_frame()
-                return
-            else:
-                # go to next scene
-                if self._cur_scene_idx < len(self._scenes)-1:
-                    # end of camera and scene reached
-                    self.cb_camera_end()
-                    self.cb_scene_end()
-
-                    if not self._iterating:
-                        # reset was called in callback
-                        return
-
-                    self._cur_scene_idx += 1
-                    self._cameras_in_scene = \
-                        list(self._dataset_meta[self.cur_scene].keys())
-                    self.cb_scene_start()
-                    self._cur_camera_idx = 0
-                    self._cur_idx = -1
-                    self.cb_camera_start()
-
-                    if self._watchdog_trigger_delay == -1:
-                        # there is no watchdog, so trigger next frame
-                        return self.process_next_frame()
-                    return
-
-                else:
-                    # end of camera, scene, and dataset reached
-                    self._done = True
-                    self.cb_camera_end()
-                    self.cb_scene_end()
-
-                    if not self._iterating:
-                        # reset was called in callback
-                        return
-
-                    self.cb_dataset_end()
-                    self._iterating = False
-                    return
-
-        # get new sample
-        self._cur_idx += 1
-
-        time_now = mirapy.now()
-        dataset_idx = self._dataset_meta[self.cur_scene][self.cur_camera][self._cur_idx][0]
-        sample = self._dataset[dataset_idx]
-
+        # small sanity check
         assert sample['identifier'][0] == self.cur_scene
         assert sample['identifier'][1] == self.cur_camera
 
-        sample_identifier = '/'.join(sample['identifier'])
-        mirapy.log(LOG_LEVEL, f"Processing {sample_identifier}")
+        # extrinsic ------------------------------------------------------------
+        if 'extrinsics' in sample:
+            ext = sample['extrinsics']
+            translation = mirapy.Point3f(ext['x'], ext['y'], ext['z'])
+            rotation_quat = mirapy.Quaternionf()
+            rotation_quat.x = ext['quat_x']
+            rotation_quat.y = ext['quat_y']
+            rotation_quat.z = ext['quat_z']
+            rotation_quat.w = ext['quat_w']
 
-        # extrinsic
-        ext = sample['extrinsics']
-        translation = mirapy.Point3f(ext['x'], ext['y'], ext['z'])
-        rotation_quat = mirapy.Quaternionf()
-        rotation_quat.x = ext['quat_x']
-        rotation_quat.y = ext['quat_y']
-        rotation_quat.z = ext['quat_z']
-        rotation_quat.w = ext['quat_w']
+            transform = mirapy.Pose3(translation, rotation_quat)
+            # done in prepare_dataset.py as of > v051
+            # transform *= mirapy.Pose3(0, 0, 0, 0, 0, np.deg2rad(180))
+            sample_mira['extrinsic'] = transform
 
-        transform = mirapy.Pose3(translation, rotation_quat)
-        transform *= mirapy.Pose3(0, 0, 0, 0, 0, np.deg2rad(180))
-        self.publishTransform3(self._frame, transform)
-
-        # images
-        color_img = sample['rgb']
-        depth_img = sample['depth'].astype('float32')
-
-        # ground truth segmentation (use score of 0.999 for all pixels)
-        gt = sample['semantic'].astype('float32') + 0.999
-        gt_classes = sample['semantic']
-
-        # predicted segmentation
-        if self._load_predicted_segmentation:
-            segmentation, segmentation_classes = \
-                self.load_predicted_segmentation(sample['identifier'])
-
-        # set depth to zero for void pixels
-        if self._zero_depth_for_void:
-            depth_img[gt_classes == 0] = 0
-
-        # wrap using MIRA Img
-        color_img_mira = to_mira_img(color_img, rgb2bgr=True)    # BGR for MIRA!
-        depth_img_mira = to_mira_img(depth_img)
-        gt_mira = to_mira_img(gt)
-        gt_classes_mira = Img8U1(gt_classes.shape[1], gt_classes.shape[0])
-        gt_classes_mira.setMat(gt_classes)
-        if self._load_predicted_segmentation:
-            segmentation_mira = to_mira_img(segmentation)
-            segmentation_classes_mira = []
-            for i in range(segmentation.shape[-1]):
-                img_mira = Img8U1(segmentation_classes.shape[1],
-                                  segmentation_classes.shape[0])
-                img_mira.setMat(
-                    np.ascontiguousarray(segmentation_classes[..., i])
+        # intrinsic ------------------------------------------------------------
+        # note, both do not change over time
+        if 'rgb_intrinsics' in sample:
+            color_intrinsics = sample['rgb_intrinsics']
+            if self._last_color_intrinsics != color_intrinsics:
+                # add only if changed to avoid recreating LUTs in MIRA
+                self._last_color_intrinsics = color_intrinsics
+                sample_mira['color_intrinsic'] = PinholeCameraIntrinsicNormalized(
+                    color_intrinsics['fx'], color_intrinsics['fy'],
+                    color_intrinsics['cx'], color_intrinsics['cy'],
+                    color_intrinsics['k1'], color_intrinsics['k2'],
+                    color_intrinsics['p1'], color_intrinsics['p2']
                 )
-                segmentation_classes_mira.append(img_mira)
 
-        # post images
-        self._ch_color_img.post(color_img_mira, time_now, self._frame)
-        self._ch_depth_img.post(depth_img_mira, time_now, self._frame)
-        self._ch_gt.post(gt_mira, time_now, self._frame)
-        self._ch_gt_classes.post(gt_classes_mira, time_now, self._frame)
-        if self._load_predicted_segmentation:
-            self._ch_segmentation.post(segmentation_mira, time_now, self._frame)
-            for ch, img_mira in zip(self._chs_segmentation_classes,
-                                    segmentation_classes_mira):
-                ch.post(img_mira, time_now, self._frame)
+        if 'depth_intrinsics' in sample:
+            depth_intrinsics = sample['depth_intrinsics']
+            if self._last_depth_intrinsics != depth_intrinsics:
+                # add only if changed to avoid recreating LUTs in MIRA
+                self._last_depth_intrinsics = depth_intrinsics
+                sample_mira['depth_intrinsic'] = DepthCameraIntrinsicNormalized(
+                    PinholeCameraIntrinsicNormalized(
+                        depth_intrinsics['fx'], depth_intrinsics['fy'],
+                        depth_intrinsics['cx'], depth_intrinsics['cy'],
+                        depth_intrinsics['k1'], depth_intrinsics['k2'],
+                        depth_intrinsics['p1'], depth_intrinsics['p2']
+                    ),
+                    depth_intrinsics['a'], depth_intrinsics['b']
+                )
 
-        self._last_time = time()
+        # images ---------------------------------------------------------------
+        if 'rgb' in sample:
+            sample_mira['color_img'] = to_mira_img(
+                sample['rgb'],
+                rgb2bgr=True    # BGR for MIRA!
+            )
+        if 'depth' in sample:
+            sample_mira['depth_img'] = to_mira_img(sample['depth'])
 
-    def process(self):
-        if self._done:
-            # iterating done, check whether to kill mira process
-            if self._kill_when_done:
-                if self._kill_time > time():
-                    time_left = self._kill_time - time()
-                    mirapy.log(LOG_LEVEL,
-                               f"Killing MIRA in {time_left:.1f} second(s)")
-                else:
-                    # kill MIRA
-                    os.kill(os.getpid(), signal.SIGKILL)
-            return
+        # ground-truth semantic segmentation -----------------------------------
+        if 'semantic' in sample:
+            # we use a score of 0.999 for all pixels
+            sample_mira['semantic_gt'] = to_mira_img(
+                sample['semantic'].astype('float32') + 0.999
+            )
+            sample_mira['semantic_gt_classes'] = to_mira_img8u1(
+                sample['semantic']    # < 255 classes
+            )
 
-        if self._paused:
-            # nothing to do for now since reader is paused
-            return
+        # predicted semantic segmentation --------------------------------------
+        if self._load_predicted_semantic:
+            sem, sem_classes = self.load_predicted_semantic(
+                sample['identifier']
+            )
+            sem = sem.transpose(1, 2, 0)    # convert to channels last
+            sem = np.ascontiguousarray(sem)    # <- important !
+            sample_mira['semantic'] = to_mira_img(sem)
 
-        if not self._iterating:
-            # we are not iterating, check whether to start
-            if self._start_time == -1:
-                # start time not set or resetted
-                self._start_time = time()
+            sample_mira['semantic_classes'] = [
+                to_mira_img8u1(s) for s in sem_classes
+            ]
 
-            # start processing after some initial delay
-            if self._start_time+self._start_delay > time():
-                # we still have to wait
-                time_left = self._start_time+self._start_delay - time()
-                mirapy.log(LOG_LEVEL,
-                           f"Waiting ({time_left:.1f} second(s) left)")
-                return
-            # start processing
-            self.reset()
-            self.start()
-        else:
-            # reader is running, check if we have to trigger the next frame
-            # based on watchdog
-            if self._watchdog_trigger_delay != -1:
-                # watchdog trigger is enabled
-                if self._last_time+self._watchdog_trigger_delay < time():
-                    mirapy.log(LOG_LEVEL,
-                               "Triggering next frame using watchdog since no "
-                               "feedback was received")
-                    self.cb_watchdog_triggered()
-                    self.process_next_frame()
+        # ground-truth instance segmentation -----------------------------------
+        if 'instance' in sample:
+            # we use a score of 0.999 for all pixels
+            sample_mira['instance_gt'] = to_mira_img(
+                sample['instance'].astype('float32') + 0.999
+            )
+            sample_mira['instance_gt_ids'] = to_mira_img(
+                sample['instance'].astype('uint16')    # < 65535 ids
+            )
 
-    def finalize(self):
-        pass
+        # predicted instance segmentation --------------------------------------
+        if self._load_predicted_instance:
+            ins, ins_ids = self.load_predicted_instance(sample['identifier'])
+            sample_mira['instance'] = to_mira_img(ins)
+            sample_mira['instance_ids'] = to_mira_img(ins_ids)
+
+        # ground-truth scene class ---------------------------------------------
+        if 'scene' in sample:
+            sample_mira['scene_gt'] = float(sample['scene']) + 0.999
+            sample_mira['scene_gt_class'] = sample['scene']
+
+        # predicted scene class ------------------------------------------------
+        if self._load_predicted_scene:
+            scene, scene_classes = self.load_predicted_scene(
+                sample['identifier']
+            )
+            sample_mira['scene'] = scene.item()
+            sample_mira['scene_class'] = scene_classes.item()
+
+        # ground-truth 3d bounding boxes ---------------------------------------
+        if '3d_boxes' in sample:
+            box_vector = VectorOrientedBoundingBox3f()
+            boxes = sample['3d_boxes']
+            instance = sample['instance'].astype('uint16')
+            semantic = sample['semantic']
+
+            # For center transform of the boxes
+            transform = mirapy.Pose3()
+
+            # The box_name is equal to the instance id
+            for box_name, box in boxes.items():
+                box_name = int(box_name)
+
+                instance_mask = instance == box_name
+                assert np.sum(instance_mask) > 0
+                semantic_classes, counts = np.unique(semantic[instance_mask], return_counts=True)
+                max_count = counts.argmax()
+                semantic_class = int(semantic_classes[max_count])
+
+                extents = np.array(box["extents"])
+                positions = np.array(box["positions"])
+                orientation = Rotation.from_matrix(box["orientations"])
+
+                origin = mirapy.Point3f(positions[0] - extents[0]/2,
+                                        positions[1] - extents[1]/2,
+                                        positions[2] - extents[2]/2)
+
+                x_axis = mirapy.Point3f(positions[0] + extents[0]/2,
+                                        positions[1] - extents[1]/2,
+                                        positions[2] - extents[2]/2)
+
+                y_axis = mirapy.Point3f(positions[0] - extents[0]/2,
+                                        positions[1] + extents[1]/2,
+                                        positions[2] - extents[2]/2)
+
+                z_axis = mirapy.Point3f(positions[0] - extents[0]/2,
+                                        positions[1] - extents[1]/2,
+                                        positions[2] + extents[2]/2)
+
+                rot = orientation.as_quat()
+
+                transform.r.x = rot[0]
+                transform.r.y = rot[1]
+                transform.r.z = rot[2]
+                transform.r.w = rot[3]
+
+                box = OrientedBoundingBox3f(origin, x_axis, y_axis, z_axis)
+                box.id = semantic_class
+                box.center_transform(transform)
+                box_vector.append(box)
+
+            sample_mira['boxes'] = box_vector
+
+        return sample_mira

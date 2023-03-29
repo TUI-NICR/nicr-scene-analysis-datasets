@@ -93,21 +93,33 @@ def _get_image_size_str_as_w_x_h(value):
     raise ValueError()
 
 
-def main():
+def main(args=None):
     # argument parser
-    parser = ap.ArgumentParser(description="Prepare COCO dataset.")
-    parser.add_argument('output_path', type=str,
-                        help="Path where to store dataset.")
-    parser.add_argument('--do-not-delete-zip', default=False,
-                        action="store_true",
-                        help="Whether to delete the zips after extraction.")
-    parser.add_argument('--download-path', type=str, default=None,
-                        help="Path where to store the downloaded dataset files"
-                             "(i.e. before extraction). If this is not set, "
-                             "the files will be downloaded into the "
-                             "`output_path`.")
+    parser = ap.ArgumentParser(
+        formatter_class=ap.ArgumentDefaultsHelpFormatter,
+        description="Prepare COCO dataset."
+    )
+    parser.add_argument(
+        'output_path',
+        type=str,
+        help="Path where to store dataset."
+    )
+    parser.add_argument(
+        '--do-not-delete-zip',
+        default=False,
+        action="store_true",
+        help="Whether to delete the zips after extraction."
+    )
+    parser.add_argument(
+        '--download-path',
+        type=str,
+        default=None,
+        help="Path where to store the downloaded dataset files (i.e. before "
+             "extraction). If this is not set, the files will be downloaded to "
+             "`output_path`."
+    )
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     # expand user
     output_path = os.path.expanduser(args.output_path)

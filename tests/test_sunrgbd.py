@@ -5,8 +5,6 @@ Simple (interface) tests for SUNRGBD dataset
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 .. codeauthor:: Soehnke Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
 """
-import os
-
 import numpy as np
 import pytest
 
@@ -26,17 +24,11 @@ N_SAMPLES = {'train': 5285, 'test': 5050}
 @pytest.mark.parametrize('split', ('train', 'test'))
 @pytest.mark.parametrize('depth_mode', ('refined', 'raw'))
 def test_dataset(split, depth_mode):
-    sample_keys = (
-        'identifier',
-        'rgb', 'rgb_intrinsics', 'depth', 'depth_intrinsics',
-        'extrinsics',
-        'semantic', 'instance', 'orientations', '3d_boxes', 'scene'
-    )
     dataset = SUNRGBD(
         dataset_path=DATASET_PATH_DICT['sunrgbd'],
         split=split,
         depth_mode=depth_mode,
-        sample_keys=sample_keys
+        sample_keys=SUNRGBD.get_available_sample_keys(split)
     )
 
     assert dataset.depth_mode == depth_mode
@@ -140,3 +132,36 @@ def test_scene_class_mapping(split):
 
     assert dataset_original.scene_n_classes == dataset_original.scene_n_classes_without_void
     assert dataset_remapped.scene_n_classes == dataset_remapped.scene_n_classes_without_void + 1
+
+
+@pytest.mark.parametrize('split', ('train', 'test'))
+def test_filter_camera(split):
+    # just some random cameras and counts that we know
+    sample_cameras = {
+        'train': {'xtion': 1701, 'realsense': 587},
+        'test': {'kv2': 1860, 'kv1': 930}
+    }
+
+    cameras = tuple(sample_cameras[split].keys())
+    n_samples = tuple(sample_cameras[split].values())
+
+    # create dataset with specified cameras
+    dataset = SUNRGBD(
+        dataset_path=DATASET_PATH_DICT['sunrgbd'],
+        split=split,
+        sample_keys=SUNRGBD.get_available_sample_keys(split),
+        cameras=cameras
+    )
+
+    assert dataset.cameras == cameras
+    assert len(dataset) == sum(n_samples)
+
+    # test filtering
+    dataset.filter_camera(cameras[0])
+    assert dataset.camera == cameras[0]
+    assert len(dataset) == n_samples[0]
+
+    # reset filtering
+    dataset.filter_camera(None)
+    assert dataset.camera is None
+    assert len(dataset) == sum(n_samples)
