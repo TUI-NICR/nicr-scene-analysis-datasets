@@ -12,7 +12,7 @@ For more details, see: [SUNRGB-D dataset](https://rgbd.cs.princeton.edu/)
 ## Prepare dataset
 ```bash
 # general usage
-python -m nicr_scene_analysis_datasets.datasets.sunrgbd.prepare_dataset \
+nicr_sa_prepare_dataset sunrgbd \
     /path/where/to/store/sunrgbd \
     --create-instances \
     --copy-instances-from-nyuv2 \

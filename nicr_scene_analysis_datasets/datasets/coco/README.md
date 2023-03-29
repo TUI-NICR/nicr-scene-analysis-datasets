@@ -9,6 +9,6 @@ For more details, see: [COCO dataset](https://cocodataset.org/#home)
 ## Prepare dataset
 ```bash
 # general usage
-python -m nicr_scene_analysis_datasets.datasets.coco.prepare_dataset \
+nicr_sa_prepare_dataset coco \
     /path/where/to/store/coco/
 ```

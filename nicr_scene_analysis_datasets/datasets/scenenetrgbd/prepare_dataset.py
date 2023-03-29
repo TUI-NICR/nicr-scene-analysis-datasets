@@ -118,41 +118,54 @@ def _mapping_for_instances(instances):
     return mapping
 
 
-def main():
+def main(args=None):
     # use fixed seed
     np.random.seed(42)
 
     # argument parser
-    parser = ap.ArgumentParser(description='Prepare SceneNetRGBD dataset.')
-    parser.add_argument('output_path', type=str,
-                        help='path where to store dataset')
-    parser.add_argument('scenenetrgbd_filepath', type=str,
-                        help='filepath to downloaded (and uncompressed) '
-                             'SceneNetRGBD files')
-    parser.add_argument('--n-random-views-to-include-train', type=int,
-                        choices=list(range(1, N_VIEWS_DEFAULT+1)),
-                        default=N_VIEWS_DEFAULT,
-                        help=f'Number of views to randomly pick from each '
-                             f'trajectory to build the training set. In '
-                             f'SceneNetRGBD each trajectory '
-                             f'is comprised of {N_VIEWS_DEFAULT} views. '
-                             f'Use this parameter to subsample the train set.')
-    parser.add_argument('--n-random-views-to-include-valid', type=int,
-                        choices=list(range(1, N_VIEWS_DEFAULT+1)),
-                        default=N_VIEWS_DEFAULT,
-                        help=f'Number of views to randomly pick from each '
-                             f'trajectory to build the validation set. In '
-                             f'SceneNetRGBD each trajectory '
-                             f'is comprised of {N_VIEWS_DEFAULT} views. '
-                             f'Use this parameter to subsample the validation '
-                             f'set.')
-    parser.add_argument('--force-at-least-n-classes-in-view', type=int,
-                        default=-1,
-                        help=f'Minimum number of classes to be present in a '
-                             f'view that is picked randomly. Note, missing '
-                             f'views are counted and supplementary taken from '
-                             f'subsequent trajectories')
-    args = parser.parse_args()
+    parser = ap.ArgumentParser(
+        formatter_class=ap.ArgumentDefaultsHelpFormatter,
+        description='Prepare SceneNetRGBD dataset.'
+    )
+    parser.add_argument(
+        'output_path',
+        type=str,
+        help="Path where to store dataset."
+    )
+    parser.add_argument(
+        'scenenetrgbd_filepath',
+        type=str,
+        help="Filepath to downloaded (and uncompressed) SceneNetRGBD files."
+    )
+    parser.add_argument(
+        '--n-random-views-to-include-train',
+        type=int,
+        choices=list(range(1, N_VIEWS_DEFAULT+1)),
+        default=N_VIEWS_DEFAULT,
+        help="Number of views to randomly pick from each trajectory to build "
+             "the training set. In SceneNetRGBD each trajectory is comprised "
+             f"of {N_VIEWS_DEFAULT} views. Use this parameter to subsample the "
+             "train set."
+    )
+    parser.add_argument(
+        '--n-random-views-to-include-valid',
+        type=int,
+        choices=list(range(1, N_VIEWS_DEFAULT+1)),
+        default=N_VIEWS_DEFAULT,
+        help="Number of views to randomly pick from each trajectory to build "
+             "the validation set. In SceneNetRGBD each trajectory is "
+             f"comprised of {N_VIEWS_DEFAULT} views. Use this parameter to "
+             "subsample the validation set."
+    )
+    parser.add_argument(
+        '--force-at-least-n-classes-in-view',
+        type=int,
+        default=-1,
+        help="Minimum number of classes to be present in a view that is "
+             "picked randomly. Note, missing views are counted and "
+             "supplementary taken from subsequent trajectories."
+    )
+    args = parser.parse_args(args)
 
     # preprocess args and expand user
     output_path = os.path.expanduser(args.output_path)
@@ -176,7 +189,7 @@ def main():
             n_random_views_to_include = args.n_random_views_to_include_train
         else:
             n_random_views_to_include = args.n_random_views_to_include_valid
-        cprint(f"Processing {split} set (subsampling from {N_VIEWS_DEFAULT} "
+        cprint(f"Processing {split} set (subsample from {N_VIEWS_DEFAULT} "
                f"views to {n_random_views_to_include} view(s) with at least "
                f"{args.force_at_least_n_classes_in_view} classes in each "
                f"view)",

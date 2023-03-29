@@ -26,12 +26,14 @@ class NYUv2(NYUv2Meta, RGBDDataset):
         split: str = 'train',
         sample_keys: Tuple[str] = ('rgb', 'depth', 'semantic'),
         use_cache: bool = False,
+        cameras: Optional[Tuple[str]] = None,
         depth_mode: str = 'refined',
         semantic_n_classes: int = 40,
         scene_use_indoor_domestic_labels: bool = False,
         **kwargs: Any
     ) -> None:
         super().__init__(
+            dataset_path=dataset_path,
             depth_mode=depth_mode,
             sample_keys=sample_keys,
             use_cache=use_cache,
@@ -40,12 +42,22 @@ class NYUv2(NYUv2Meta, RGBDDataset):
 
         assert split in self.SPLITS
         assert depth_mode in self.DEPTH_MODES
+        assert all(sk in self.get_available_sample_keys(split) for sk in sample_keys)
         self._semantic_n_classes = semantic_n_classes
         self._split = split
         self._depth_mode = depth_mode
-        self._cameras = self.CAMERAS
         self._scene_use_indoor_domestic_labels = scene_use_indoor_domestic_labels
 
+        # cameras
+        if cameras is None:
+            # use all available cameras (=default dummy camera)
+            self._cameras = self.CAMERAS
+        else:
+            # use subset of cameras (does not really apply to this dataset)
+            assert all(c in self.CAMERAS for c in cameras)
+            self._cameras = cameras
+
+        # load file list
         if dataset_path is not None:
             dataset_path = os.path.expanduser(dataset_path)
             assert os.path.exists(dataset_path), dataset_path
@@ -97,7 +109,11 @@ class NYUv2(NYUv2Meta, RGBDDataset):
     def __len__(self) -> int:
         return len(self._filenames)
 
-    def _load(self, directory: str, filename: str) -> np.array:
+    @staticmethod
+    def get_available_sample_keys(split: str) -> Tuple[str]:
+        return NYUv2Meta.SPLIT_SAMPLE_KEYS[split]
+
+    def _load(self, directory: str, filename: str) -> np.ndarray:
         fp = os.path.join(self._dataset_path,
                           self.split,
                           directory,
@@ -111,10 +127,10 @@ class NYUv2(NYUv2Meta, RGBDDataset):
 
         return img
 
-    def _load_rgb(self, idx) -> np.array:
+    def _load_rgb(self, idx) -> np.ndarray:
         return self._load(self.RGB_DIR, self._filenames[idx])
 
-    def _load_depth(self, idx) -> np.array:
+    def _load_depth(self, idx) -> np.ndarray:
         if self._depth_mode == 'raw':
             return self._load(self.DEPTH_RAW_DIR, self._filenames[idx])
         else:
@@ -123,13 +139,13 @@ class NYUv2(NYUv2Meta, RGBDDataset):
     def _load_identifier(self, idx: int) -> Tuple[str]:
         return SampleIdentifier((self._filenames[idx],))
 
-    def _load_semantic(self, idx: int) -> np.array:
+    def _load_semantic(self, idx: int) -> np.ndarray:
         return self._load(
             self.SEMANTIC_DIR_FMT.format(self._semantic_n_classes),
             self._filenames[idx]
         )
 
-    def _load_instance(self, idx: int) -> np.array:
+    def _load_instance(self, idx: int) -> np.ndarray:
         instance = self._load(self.INSTANCES_DIR, self._filenames[idx])
         return instance.astype('int32')
 
@@ -158,7 +174,7 @@ class NYUv2(NYUv2Meta, RGBDDataset):
                 "Scene class file not found. Maybe the SUNRGBD matching was "
                 "not done yet."
             )
-        with open(fp, "r") as f:
+        with open(fp, 'r') as f:
             class_str = f.readline()
 
         class_idx = self.SCENE_LABEL_LIST.index(class_str)
@@ -170,7 +186,7 @@ class NYUv2(NYUv2Meta, RGBDDataset):
 
         return class_idx
 
-    def _load_normal(self, idx: int) -> np.array:
+    def _load_normal(self, idx: int) -> np.ndarray:
         # format is xyz with invalid values (127, 127, 127)
         normal = self._load(self.NORMAL_DIR, self._filenames[idx])
         # convert to float, thus, invalid values are (0., 0., 0.)

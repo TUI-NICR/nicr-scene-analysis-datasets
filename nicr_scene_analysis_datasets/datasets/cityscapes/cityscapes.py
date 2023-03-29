@@ -2,6 +2,7 @@
 """
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 .. codeauthor:: Soehnke Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
+.. codeauthor:: Leonard Rabes <leonard.rabes@tu-ilmenau.de>
 """
 from cityscapesscripts.helpers.labels import labels
 
@@ -12,6 +13,14 @@ from ...dataset_base import SemanticLabelList
 
 class CityscapesMeta:
     SPLITS = ('train', 'valid', 'test')
+
+    _DATA_SAMPLE_KEYS = ('identifier', 'rgb', 'depth')
+    _ANNOTATION_SAMPLE_KEYS = ('semantic', 'instance')
+    SPLIT_SAMPLE_KEYS = {
+        SPLITS[0]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
+        SPLITS[1]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
+        SPLITS[2]: _DATA_SAMPLE_KEYS,
+    }
 
     # calculated over the whole train split
     # see: my_dataset.depth_compute_stats() for calculation
@@ -72,3 +81,5 @@ class CityscapesMeta:
 
     SEMANTIC_REDUCED_DIR = 'semantic_19'
     SEMANTIC_REDUCED_COLORED_DIR = 'semantic_19_colored'
+
+    INSTANCE_DIR = 'instance'

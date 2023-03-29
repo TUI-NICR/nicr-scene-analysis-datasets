@@ -18,15 +18,10 @@ N_CAMERAS = {'train': 2477, 'valid': 603}
 
 @pytest.mark.parametrize('split', ('train', 'valid'))
 def test_dataset(split):
-    sample_keys = (
-        'identifier',
-        'rgb',
-        'semantic', 'instance'
-    )
     dataset = COCO(
         dataset_path=DATASET_PATH_DICT['coco'],
         split=split,
-        sample_keys=sample_keys
+        sample_keys=COCO.get_available_sample_keys(split)
     )
     assert dataset.split == split
 
@@ -61,3 +56,36 @@ def test_dataset(split):
             h, w, _ = dataset[0]['rgb'].shape
 
             assert f'{w}x{h}' == camera
+
+
+@pytest.mark.parametrize('split', ('train', 'valid'))
+def test_filter_camera(split):
+    # just some random cameras and counts that we know
+    sample_cameras = {
+        'train': {'480x640': 8411, '426x640': 1660},
+        'valid': {'640x480': 1061, '480x640': 336, '500x335': 9}
+    }
+
+    cameras = tuple(sample_cameras[split].keys())
+    n_samples = tuple(sample_cameras[split].values())
+
+    # create dataset with specified cameras
+    dataset = COCO(
+        dataset_path=DATASET_PATH_DICT['coco'],
+        split=split,
+        sample_keys=COCO.get_available_sample_keys(split),
+        cameras=cameras
+    )
+
+    assert dataset.cameras == cameras
+    assert len(dataset) == sum(n_samples)
+
+    # test filtering
+    dataset.filter_camera(cameras[0])
+    assert dataset.camera == cameras[0]
+    assert len(dataset) == n_samples[0]
+
+    # reset filtering
+    dataset.filter_camera(None)
+    assert dataset.camera is None
+    assert len(dataset) == sum(n_samples)

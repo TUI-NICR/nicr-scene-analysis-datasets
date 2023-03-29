@@ -13,22 +13,23 @@ from detectron2.data import MetadataCatalog
 from nicr_scene_analysis_datasets import d2 as nicr_d2
 from nicr_scene_analysis_datasets import KNOWN_DATASETS
 from nicr_scene_analysis_datasets.utils.testing import DATASET_PATH_DICT
-from nicr_scene_analysis_datasets.utils.testing import DATASET_BASEPATH
 
 
 @pytest.mark.parametrize('dataset_name', KNOWN_DATASETS)
-@pytest.mark.parametrize('dataset_mode', ('test', 'train'))
-def test_d2_dataset(dataset_name, dataset_mode):
+@pytest.mark.parametrize('dataset_split', ('test', 'valid', 'train'))
+def test_d2_dataset(dataset_name, dataset_split):
     invalid_names = set({
         'coco_test',
-        'scenenetrgbd_test'
+        'nyuv2_valid',
+        'scenenetrgbd_test',
+        'sunrgbd_valid'
     })
     # Get the path of the dataset
     dataset_path = DATASET_PATH_DICT[dataset_name]
     # Set the path for the dataset, so that d2 can use it
     nicr_d2.set_dataset_path(dataset_path)
     # Get the correct name for using the dataset from the DatasetCatalog
-    dataset_name_d2 = f'{dataset_name}_{dataset_mode}'
+    dataset_name_d2 = f'{dataset_name}_{dataset_split}'
     if dataset_name_d2 in invalid_names:
         return
     dataset = DatasetCatalog.get(dataset_name_d2)
@@ -36,9 +37,11 @@ def test_d2_dataset(dataset_name, dataset_mode):
 
     for i, sample in enumerate(dataset):
         assert isinstance(sample, dict)
-        assert 'rgb' in sample
-        assert 'semantic' in sample
         assert 'identifier' in sample
+        assert 'rgb' in sample
+        assert 'semantic' in sample or 'semantic' not in dataset.get_available_sample_keys(dataset_split)
+        assert 'instance' in sample or 'instance' not in dataset.get_available_sample_keys(dataset_split)
+
         if i >= 9:
             break
 

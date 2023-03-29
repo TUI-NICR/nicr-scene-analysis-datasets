@@ -35,7 +35,7 @@ class DepthDataset(DatasetBase):
         self._depth_mode = depth_mode
 
     @abc.abstractmethod
-    def _load_depth(self, idx) -> np.array:
+    def _load_depth(self, idx) -> np.ndarray:
         pass
 
     def _load_depth_intrinsics(self, idx) -> IntrinsicCameraParametersNormalized:

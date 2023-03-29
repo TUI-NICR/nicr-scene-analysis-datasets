@@ -16,15 +16,10 @@ N_SAMPLES = {'train': 50595, 'valid': 6000}
 
 @pytest.mark.parametrize('split', ('train', 'valid'))
 def test_dataset(split):
-    sample_keys = (
-        'identifier',
-        'rgb', 'depth',
-        'semantic'
-    )
     dataset = SceneNetRGBD(
         dataset_path=DATASET_PATH_DICT['scenenetrgbd'],
         split=split,
-        sample_keys=sample_keys,
+        sample_keys=SceneNetRGBD.get_available_sample_keys(split),
         depth_mode='refined',
         semantic_n_classes=N_CLASSES_WITH_VOID - 1
     )

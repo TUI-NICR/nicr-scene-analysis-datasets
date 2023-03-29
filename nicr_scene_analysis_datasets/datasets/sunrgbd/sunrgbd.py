@@ -16,6 +16,17 @@ class SUNRGBDMeta:
     SPLITS = ('train', 'test')
     SPLIT_FILELIST_FILENAMES = {SPLITS[0]: 'train.txt', SPLITS[1]: 'test.txt'}
 
+    _DATA_SAMPLE_KEYS = ('identifier',
+                         'extrinsics',
+                         'rgb', 'rgb_intrinsics',
+                         'depth', 'depth_intrinsics')
+    _ANNOTATION_SAMPLE_KEYS = ('semantic', 'instance', 'orientations',
+                               '3d_boxes', 'scene')
+    SPLIT_SAMPLE_KEYS = {
+        SPLITS[0]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
+        SPLITS[1]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS
+    }
+
     # note that mean and std differ depending on the selected depth_mode
     # however, the impact is marginal, therefore, we decided to use the
     # stats for refined depth for both cases
@@ -25,7 +36,7 @@ class SUNRGBDMeta:
     # - min: 161.0
     # - max: 65400.0
     # see: my_dataset.depth_compute_stats() for calculation
-    TRAIN_SPLIT_DEPTH_STATS = DepthStats(
+    TRAIN_SPLIT_DEPTH_STATS = DepthStats(    # 1/10 mm -> 1 = 0.1mm
         min=1.0,
         max=65528.0,
         mean=19025.14930492213,
@@ -278,7 +289,8 @@ class SUNRGBDMeta:
                       sem_label.is_thing,
                       sem_label.use_orientations,
                       color)
-        for sem_label, color in zip(SEMANTIC_LABEL_LIST, SEMANTIC_CLASS_COLORS_NYUV2)
+        for sem_label, color in zip(SEMANTIC_LABEL_LIST,
+                                    SEMANTIC_CLASS_COLORS_NYUV2)
     ))
 
     SEMANTIC_CLASS_NAMES_GERMAN = (

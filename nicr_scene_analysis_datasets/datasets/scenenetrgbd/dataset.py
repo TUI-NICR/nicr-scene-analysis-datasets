@@ -24,11 +24,13 @@ class SceneNetRGBD(SceneNetRGBDMeta, RGBDDataset):
         split: str = 'train',
         sample_keys: Tuple[str] = ('rgb', 'depth', 'semantic'),
         use_cache: bool = False,
+        cameras: Optional[Tuple[str]] = None,
         depth_mode: str = 'refined',
         semantic_n_classes: int = 13,
         **kwargs: Any
     ) -> None:
         super().__init__(
+            dataset_path=dataset_path,
             depth_mode=depth_mode,
             sample_keys=sample_keys,
             use_cache=use_cache,
@@ -37,11 +39,22 @@ class SceneNetRGBD(SceneNetRGBDMeta, RGBDDataset):
 
         assert split in self.SPLITS
         assert depth_mode in self.DEPTH_MODES
+        assert all(sk in self.get_available_sample_keys(split) for sk in sample_keys)
         self._semantic_n_classes = semantic_n_classes
         self._split = split
         self._depth_mode = depth_mode
         self._cameras = self.CAMERAS
 
+        # cameras
+        if cameras is None:
+            # use all available cameras (=default dummy camera)
+            self._cameras = self.CAMERAS
+        else:
+            # use subset of cameras (does not really apply to this dataset)
+            assert all(c in self.CAMERAS for c in cameras)
+            self._cameras = cameras
+
+        # load file list
         if dataset_path is not None:
             dataset_path = os.path.expanduser(dataset_path)
             assert os.path.exists(dataset_path), dataset_path
@@ -90,7 +103,11 @@ class SceneNetRGBD(SceneNetRGBDMeta, RGBDDataset):
     def __len__(self) -> int:
         return len(self._files['rgb'])
 
-    def _load(self, directory, filename) -> np.array:
+    @staticmethod
+    def get_available_sample_keys(split: str) -> Tuple[str]:
+        return SceneNetRGBDMeta.SPLIT_SAMPLE_KEYS[split]
+
+    def _load(self, directory, filename) -> np.ndarray:
         fp = os.path.join(self._dataset_path,
                           self.split,
                           directory,
@@ -103,15 +120,15 @@ class SceneNetRGBD(SceneNetRGBDMeta, RGBDDataset):
 
         return img
 
-    def _load_rgb(self, idx: int) -> np.array:
+    def _load_rgb(self, idx: int) -> np.ndarray:
         return self._load(self.RGB_DIR, self._files['rgb'][idx])
 
-    def _load_depth(self, idx: int) -> np.array:
+    def _load_depth(self, idx: int) -> np.ndarray:
         return self._load(self.DEPTH_DIR, self._files['depth'][idx])
 
     def _load_identifier(self, idx: int) -> Tuple[str]:
         fn, _ = os.path.splitext(self._files['rgb'][idx])
         return SampleIdentifier(os.path.normpath(fn).split(os.sep))
 
-    def _load_semantic(self, idx: int) -> np.array:
+    def _load_semantic(self, idx: int) -> np.ndarray:
         return self._load(self.SEMANTIC_13_DIR, self._files['label'][idx])

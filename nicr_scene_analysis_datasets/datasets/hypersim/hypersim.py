@@ -4,30 +4,12 @@
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 .. codeauthor:: Söhnke Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
 """
-import numpy as np
-
 from ...dataset_base import DepthStats
 from ...dataset_base import SceneLabel
 from ...dataset_base import SceneLabelList
 from ...dataset_base import SemanticLabel
 from ...dataset_base import SemanticLabelList
 from ...utils.img import get_colormap
-
-
-def _get_camera_intrinsic_normalized():
-    width_pixels = 1024
-    height_pixels = 768
-    fov_x = np.pi/3.0
-    fov_y = fov_x*(height_pixels/width_pixels)
-    f_x = (width_pixels/np.tan(fov_x/2))/2
-    f_y = (height_pixels/np.tan(fov_y/2))/2
-
-    return {
-        'fx': f_x/width_pixels, 'fy': f_y/height_pixels,
-        'cx': 0.5, 'cy': 0.5,
-        'k1': 0, 'k2': 0, 'k3': 0, 'k4': 0, 'k5': 0, 'k6': 0,
-        'p1': 0, 'p2': 0
-    }
 
 
 class HypersimMeta:
@@ -50,15 +32,34 @@ class HypersimMeta:
                   SPLITS[1]: 'valid',
                   SPLITS[2]: 'test'}
 
+    _DATA_SAMPLE_KEYS = ('identifier',
+                         'extrinsics',
+                         'rgb', 'rgb_intrinsics',
+                         'depth', 'depth_intrinsics')
+    _ANNOTATION_SAMPLE_KEYS = ('semantic', 'instance', 'orientations',
+                               '3d_boxes', 'scene', 'normal')
+    SPLIT_SAMPLE_KEYS = {
+        SPLITS[0]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
+        SPLITS[1]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
+        SPLITS[2]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
+    }
+
     # calculated over the whole train split from train.txt (no subsample)
     # see: my_dataset.depth_compute_stats() for calculation
     TRAIN_SPLIT_DEPTH_STATS = DepthStats(
         min=1.0,
         max=65535.0,
+        mean=6157.630215246957,    # updated in v051
+        std=6892.228124720381    # updated in v051
+    )
+
+    TRAIN_SPLIT_DEPTH_STATS_V040 = DepthStats(
+        min=1.0,
+        max=65535.0,
         mean=6245.599769632095,    # updated in v040
         std=7062.149390036199    # updated in v040
     )
-    # TODO(v050): remove old depth stats
+    # TODO: remove old depth stats
     _TRAIN_SPLIT_DEPTH_STATS_V030 = DepthStats(
         min=1.0,
         max=65535.0,
@@ -75,15 +76,11 @@ class HypersimMeta:
     DEPTH_MODES = ('raw',)
 
     CAMERAS = ('virtual',)  # just a dummy camera name
-    RGB_INTRINSICS_NORMALIZED = {
-        'virtual': _get_camera_intrinsic_normalized()
-    }
-    DEPTH_INTRINSICS_NORMALIZED = {
-        'virtual': {**_get_camera_intrinsic_normalized(), 'a': 0.001, 'b': -1},
-    }
 
     DEPTH_DIR = 'depth'
+    DEPTH_INTRINSICS_DIR = 'depth_intrinsics'
     RGB_DIR = 'rgb'
+    RGB_INTRINSICS_DIR = 'rgb_intrinsics'
     SEMANTIC_DIR = 'semantic_40'
     SEMANTIC_COLORED_DIR = 'semantic_40_colored'
     EXTRINSICS_DIR = 'extrinsics'
@@ -92,6 +89,7 @@ class HypersimMeta:
     ORIENTATIONS_DIR = 'orientations'
     NORMAL_DIR = 'normal'
     SCENE_CLASS_DIR = 'scene_class'
+    POINT_CLOUD_DIR = 'pointcloud'
 
     SEMANTIC_N_CLASSES = 40
     # original hypersim scene labels

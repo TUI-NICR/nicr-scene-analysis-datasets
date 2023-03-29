@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de
+.. codeauthor:: Leonard Rabes <leonard.rabes@tu-ilmenau.de>
 """
 import argparse as ap
 import json
@@ -23,15 +24,23 @@ DISPARITY_RAW_DIR = 'disparity'
 LABEL_DIR = 'gtFine'
 
 
-def main():
+def main(args=None):
     # argument parser
-    parser = ap.ArgumentParser(description='Prepare Cityscapes dataset.')
-    parser.add_argument('output_path', type=str,
-                        help="Path where to store dataset.")
-    parser.add_argument('cityscapes_filepath', type=str,
-                        help="Filepath to downloaded (and uncompressed) "
-                             "Cityscapes files.")
-    args = parser.parse_args()
+    parser = ap.ArgumentParser(
+        formatter_class=ap.ArgumentDefaultsHelpFormatter,
+        description='Prepare Cityscapes dataset.'
+    )
+    parser.add_argument(
+        'output_path',
+        type=str,
+        help="Path where to store dataset."
+    )
+    parser.add_argument(
+        'cityscapes_filepath',
+        type=str,
+        help="Filepath to downloaded (and uncompressed) Cityscapes files."
+    )
+    args = parser.parse_args(args)
 
     # preprocess args and expand user
     output_path = os.path.expanduser(args.output_path)
@@ -63,8 +72,11 @@ def main():
         os.path.join(args.cityscapes_filepath, LABEL_DIR),
         extension='.png',
     )
-    label_filepaths = [fp for fp in label_filepaths
-                       if os.path.basename(fp).find('labelIds') > -1]
+    semantic_label_filepaths = [fp for fp in label_filepaths
+                                if os.path.basename(fp).find('labelIds') > -1]
+
+    instance_label_filepaths = [fp for fp in label_filepaths
+                                if os.path.basename(fp).find('instanceIds') > -1]
 
     disparity_raw_filepaths = get_filepaths(
         os.path.join(args.cityscapes_filepath, DISPARITY_RAW_DIR),
@@ -78,7 +90,8 @@ def main():
 
     # check for consistency
     assert all(len(path_list) == 5000 for path_list in [rgb_filepaths,
-                                                        label_filepaths,
+                                                        semantic_label_filepaths,
+                                                        instance_label_filepaths,
                                                         disparity_raw_filepaths,
                                                         parameters_filepaths])
 
@@ -87,14 +100,15 @@ def main():
         return '_'.join(os.path.basename(fp).split('_')[:3])
 
     basenames = [get_basename(f) for f in rgb_filepaths]
-    for li in [label_filepaths, disparity_raw_filepaths, parameters_filepaths]:
+    for li in [semantic_label_filepaths, disparity_raw_filepaths, parameters_filepaths]:
         assert basenames == [get_basename(f) for f in li]
 
     filelists = {s: {'rgb': [],
                      'depth_raw': [],
                      'disparity_raw': [],
-                     'labels_33': [],
-                     'labels_19': []}
+                     'semantic_33': [],
+                     'semantic_19': [],
+                     'instance': []}
                  for s in CityscapesMeta.SPLITS}
 
     # copy rgb images
@@ -159,28 +173,28 @@ def main():
         filelists[subset]['depth_raw'].append(os.path.join(city,
                                                            depth_basename))
 
-    print("Processing label files")
+    print("Processing semantic label files")
     mapping_1plus33_to_1plus19 = np.array(
         [CityscapesMeta.SEMANTIC_CLASS_MAPPING_REDUCED[i]
          for i in range(1+33)], dtype='uint8'
     )
 
-    for l_fp in tqdm(label_filepaths):
-        basename = os.path.basename(l_fp)
-        city = os.path.basename(os.path.dirname(l_fp))
-        subset = os.path.basename(os.path.dirname(os.path.dirname(l_fp)))
+    for sem_fp in tqdm(semantic_label_filepaths):
+        basename = os.path.basename(sem_fp)
+        city = os.path.basename(os.path.dirname(sem_fp))
+        subset = os.path.basename(os.path.dirname(os.path.dirname(sem_fp)))
         subset = 'valid' if subset == 'val' else subset
 
-        # load label with 1+33 classes
-        label_full = cv2.imread(l_fp, cv2.IMREAD_UNCHANGED)
+        # load semantic with 1+33 classes
+        label_full = cv2.imread(sem_fp, cv2.IMREAD_UNCHANGED)
 
         # full: 1+33 classes (original label file -> just copy file)
         dest_path = os.path.join(args.output_path, subset,
                                  CityscapesMeta.SEMANTIC_FULL_DIR, city)
         os.makedirs(dest_path, exist_ok=True)
         # print(l_fp, '->', os.path.join(dest_path, basename))
-        shutil.copy(l_fp, os.path.join(dest_path, basename))
-        filelists[subset]['labels_33'].append(os.path.join(city, basename))
+        shutil.copy(sem_fp, os.path.join(dest_path, basename))
+        filelists[subset]['semantic_33'].append(os.path.join(city, basename))
 
         # full: 1+33 classes colored
         dest_path = os.path.join(args.output_path, subset,
@@ -198,7 +212,7 @@ def main():
                                  CityscapesMeta.SEMANTIC_REDUCED_DIR, city)
         os.makedirs(dest_path, exist_ok=True)
         cv2.imwrite(os.path.join(dest_path, basename), label_reduced)
-        filelists[subset]['labels_19'].append(os.path.join(city, basename))
+        filelists[subset]['semantic_19'].append(os.path.join(city, basename))
 
         # reduced: 1+19 classes colored
         dest_path = os.path.join(args.output_path, subset,
@@ -207,6 +221,19 @@ def main():
         os.makedirs(dest_path, exist_ok=True)
         save_indexed_png(os.path.join(dest_path, basename), label_reduced,
                          colormap=CityscapesMeta.SEMANTIC_LABEL_LIST_REDUCED.colors_array)
+
+    print("Copying instance label files")
+    for inst_fp in tqdm(instance_label_filepaths):
+        basename = os.path.basename(inst_fp)
+        city = os.path.basename(os.path.dirname(inst_fp))
+        subset = os.path.basename(os.path.dirname(os.path.dirname(inst_fp)))
+        subset = 'valid' if subset == 'val' else subset
+
+        dest_path = os.path.join(args.output_path, subset,
+                                 CityscapesMeta.INSTANCE_DIR, city)
+        os.makedirs(dest_path, exist_ok=True)
+        shutil.copy(inst_fp, os.path.join(dest_path, basename))
+        filelists[subset]['instance'].append(os.path.join(city, basename))
 
     # ensure that filelists are valid and faultless
     def get_identifier(filepath):

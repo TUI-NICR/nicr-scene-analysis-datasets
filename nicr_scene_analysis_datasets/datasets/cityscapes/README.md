@@ -9,13 +9,14 @@ For more details, see: [Cityscapes Dataset](https://www.cityscapes-dataset.com/)
 
 1. Download and unzip dataset files:
     Use `csDownload` or download the files mentioned below manually from: [Cityscapes Dataset Downloads](https://www.cityscapes-dataset.com/downloads/)
+    
     ```bash
     CITYSCAPES_DOWNLOAD_DIR="/path/where/to/store/cityscapes_downloads"
 
     # using cityscapesScripts
     # use "csDownload -l" to list available packages
 
-    # labels
+    # labels (semantic, instance)
     csDownload gtFine_trainvaltest.zip -d $CITYSCAPES_DOWNLOAD_DIR    # -> 241MB
     # rgb images
     csDownload leftImg8bit_trainvaltest.zip -d $CITYSCAPES_DOWNLOAD_DIR     # -> 11GB
@@ -31,7 +32,7 @@ For more details, see: [Cityscapes Dataset](https://www.cityscapes-dataset.com/)
 2. Convert dataset:
     ```bash
     # general usage
-    python -m nicr_scene_analysis_datasets.cityscapes.prepare_dataset \
+    nicr_sa_prepare_dataset cityscapes \
         /path/where/to/datasets/cityscapes \
         $CITYSCAPES_DOWNLOAD_DIR
     ```

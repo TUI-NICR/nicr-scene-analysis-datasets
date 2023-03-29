@@ -5,24 +5,37 @@
 from typing import Type, Union
 
 from .dataset_base import KNOWN_CLASS_WEIGHTINGS
+from .dataset_base import ConcatDataset
 from .datasets.cityscapes.dataset import Cityscapes
 from .datasets.coco.dataset import COCO
 from .datasets.hypersim.dataset import Hypersim
 from .datasets.nyuv2.dataset import NYUv2
+from .datasets.scannet.dataset import ScanNet
 from .datasets.scenenetrgbd.dataset import SceneNetRGBD
 from .datasets.sunrgbd.dataset import SUNRGBD
+
 
 _DATASETS = {
     'cityscapes': Cityscapes,
     'coco': COCO,
     'hypersim': Hypersim,
     'nyuv2': NYUv2,
+    'scannet': ScanNet,
     'scenenetrgbd': SceneNetRGBD,
     'sunrgbd': SUNRGBD,
 }
 KNOWN_DATASETS = tuple(_DATASETS.keys())
 
-DatasetType = Union[Cityscapes, COCO, Hypersim, NYUv2, SceneNetRGBD, SUNRGBD]
+DatasetType = Union[
+    Cityscapes,
+    COCO,
+    Hypersim,
+    NYUv2,
+    ScanNet,
+    SceneNetRGBD,
+    SUNRGBD,
+    ConcatDataset
+]
 
 
 def get_dataset_class(name: str) -> Type[DatasetType]:

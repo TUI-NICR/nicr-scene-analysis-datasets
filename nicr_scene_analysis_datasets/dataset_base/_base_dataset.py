@@ -3,7 +3,7 @@
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 .. codeauthor:: Soehnke Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
 """
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import abc
 from copy import deepcopy
@@ -12,6 +12,7 @@ import warnings
 
 import numpy as np
 
+from ..utils.io import load_creation_metafile
 from ._annotation import ExtrinsicCameraParametersNormalized
 from ._annotation import OrientationDict
 from ._annotation import SampleIdentifier
@@ -22,6 +23,8 @@ from ._class_weighting import compute_class_weights
 class DatasetBase(abc.ABC):
     def __init__(
         self,
+        *,
+        dataset_path: Optional[str],
         sample_keys: Tuple[str] = ('semantic',),
         use_cache: bool = False,
         cache_disable_deepcopy: bool = False,  # kwargs only in derived classes
@@ -46,6 +49,12 @@ class DatasetBase(abc.ABC):
             warnings.warn("Copying cache entries before returning is disabled."
                           "Be aware of this when modifying the returned "
                           "sample dicts.")
+
+        # load creation meta
+        if dataset_path is not None:
+            self._creation_meta = load_creation_metafile(dataset_path)
+        else:
+            self._creation_meta = None
 
         # Note:
         # 'auto_register_sample_key_loaders' should NOT be called here as it
@@ -76,11 +85,18 @@ class DatasetBase(abc.ABC):
                 raise AttributeError(
                     f"Cannot auto register sample key loader for key: "
                     f"'{sample_key}' as {self.__class__.__name__} has no "
-                    f"function called {func_name}.")
+                    f"function called {func_name}."
+                )
             self.register_sample_key_loader(
                 sample_key,
                 getattr(self, func_name)
             )
+
+    @property
+    def creation_meta(self) -> Union[None, Dict]:
+        # we may have multiple entries in the meta file, so we take the last
+        # one, see create_or_update_creation_metafile()
+        return self._creation_meta[-1]
 
     @property
     def use_cache(self) -> bool:
@@ -90,8 +106,8 @@ class DatasetBase(abc.ABC):
     def sample_keys(self) -> Tuple[str]:
         return self._sample_keys
 
-    def filter_camera(self, camera):
-        assert camera in self.cameras
+    def filter_camera(self, camera: Union[None, str]):
+        assert camera is None or camera in self.cameras
 
         if self._use_cache and len(self.cameras) > 1:
             # clear cache for all loaders as index mapping changes
@@ -102,16 +118,19 @@ class DatasetBase(abc.ABC):
         return self
 
     def __enter__(self):
+        # handles context stuff, e.g., with dataset.filter_camera('xy') as ds
         return self
 
     def __exit__(self, *exc: Any):
-        self._camera = None
+        # handles context stuff, e.g., with dataset.filter_camera('xy') as ds
+        # reset camera filter
+        self.filter_camera(None)
 
     @abc.abstractmethod
     def __len__(self) -> int:
         pass
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int):
         # load data for every key in _sample_keys (see init)
         sample = {key: self.load(key, idx) for key in self._sample_keys}
 
@@ -136,12 +155,17 @@ class DatasetBase(abc.ABC):
         pass
 
     @property
-    def camera(self) -> str:
+    def camera(self) -> Union[None, str]:
         return self._camera
 
     @property
     @abc.abstractmethod
     def config(self) -> DatasetConfig:
+        pass
+
+    @staticmethod
+    @abc.abstractmethod
+    def get_available_sample_keys(split: str) -> Tuple[str]:
         pass
 
     @abc.abstractmethod
@@ -152,10 +176,10 @@ class DatasetBase(abc.ABC):
         # so far single extrinsic parameters for the entire sample
         raise NotImplementedError()
 
-    def _load_semantic(self, idx: int) -> np.array:
+    def _load_semantic(self, idx: int) -> np.ndarray:
         raise NotImplementedError()
 
-    def _load_instance(self, idx: int) -> np.array:
+    def _load_instance(self, idx: int) -> np.ndarray:
         raise NotImplementedError()
 
     def _load_orientations(self, idx: int) -> OrientationDict:
@@ -167,7 +191,7 @@ class DatasetBase(abc.ABC):
     def _load_scene(self, idx: int) -> int:
         raise NotImplementedError()
 
-    def _load_normal(self, idx: int) -> np.array:
+    def _load_normal(self, idx: int) -> np.ndarray:
         raise NotImplementedError()
 
     @property
@@ -197,7 +221,7 @@ class DatasetBase(abc.ABC):
         c: float = 1.02,
         n_threads: int = 1,
         debug: bool = False
-    ) -> np.array:
+    ) -> np.ndarray:
         return compute_class_weights(
             dataset=self,
             sample_key='scene',
@@ -219,11 +243,11 @@ class DatasetBase(abc.ABC):
         return self.config.semantic_label_list_without_void.class_names
 
     @property
-    def semantic_class_colors(self) -> np.array:
+    def semantic_class_colors(self) -> np.ndarray:
         return self.config.semantic_label_list.colors_array
 
     @property
-    def semantic_class_colors_without_void(self) -> np.array:
+    def semantic_class_colors_without_void(self) -> np.ndarray:
         return self.config.semantic_label_list_without_void.colors_array
 
     @property
@@ -236,9 +260,9 @@ class DatasetBase(abc.ABC):
 
     def semantic_get_colored(
         self,
-        value: np.array,
+        value: np.ndarray,
         with_void: bool = True
-    ) -> np.array:
+    ) -> np.ndarray:
         if with_void:
             colors = self.semantic_class_colors
         else:
@@ -249,9 +273,9 @@ class DatasetBase(abc.ABC):
 
     @staticmethod
     def static_semantic_get_colored(
-        value: np.array,
-        colors: Union[Tuple, List, np.array]
-    ) -> np.array:
+        value: np.ndarray,
+        colors: Union[Tuple, List, np.ndarray]
+    ) -> np.ndarray:
         cmap = np.asarray(colors, dtype='uint8')
         return cmap[value]
 
@@ -261,7 +285,7 @@ class DatasetBase(abc.ABC):
         c: float = 1.02,
         n_threads: int = 1,
         debug: bool = False
-    ) -> np.array:
+    ) -> np.ndarray:
         return compute_class_weights(
             dataset=self,
             sample_key='semantic',

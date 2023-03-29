@@ -11,10 +11,17 @@ class COCOMeta:
     SPLITS = ('train', 'valid')
     SPLIT_FILELIST_FILENAMES = {SPLITS[0]: 'train.txt', SPLITS[1]: 'valid.txt'}
 
+    _DATA_SAMPLE_KEYS = ('identifier', 'rgb')
+    _ANNOTATION_SAMPLE_KEYS = ('semantic', 'instance')
+    SPLIT_SAMPLE_KEYS = {
+        SPLITS[0]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
+        SPLITS[1]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
+    }
+
     CAMERAS = ('cameras1',)    # just a dummy camera name
 
-    # It's intended that this folder is named "image" and not "rgb" as COCO
-    # has some gray scale images.
+    # it is intended that this folder is named "image" and not "rgb" as COCO
+    # has some gray scale images
     IMAGE_DIR = 'image'
     SEMANTIC_DIR = 'semantic'
     SEMANTIC_COLORED_DIR = 'semantic_colored'

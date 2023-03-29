@@ -11,6 +11,13 @@ from ...dataset_base import SemanticLabelList
 class SceneNetRGBDMeta:
     SPLITS = ('train', 'valid')
 
+    _DATA_SAMPLE_KEYS = ('identifier', 'rgb', 'depth')
+    _ANNOTATION_SAMPLE_KEYS = ('semantic',)
+    SPLIT_SAMPLE_KEYS = {
+        SPLITS[0]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
+        SPLITS[1]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
+    }
+
     # calculated using a subsampled dataset (see prepare_dataset.py):
     # --n_random_views_to_include_train 3
     # --n_random_views_to_include_valid 6

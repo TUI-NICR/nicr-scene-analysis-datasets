@@ -39,7 +39,7 @@ For more details, see: [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet
     # full dataset:
     # - train: 16x1000 + 1x865 trajectories with 300 views per trajectory -> 5,059,500 samples
     # - valid: 1x1000 trajectories with 300 views per trajectory -> 300,000 samples
-    python -m nicr_scene_analysis_datasets.datasets.scenenetrgbd.prepare_dataset \
+    nicr_sa_prepare_dataset scenenetrgbd \
         /path/where/to/store/scenenetrgbd \
         ${SCENENETRGBD_DOWNLOAD_DIR}
 
@@ -49,7 +49,7 @@ For more details, see: [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet
     # -> pick only views with >= 4 different classes
     # - train: 16x1000 + 1x865 trajectories with 3 views per trajectory -> 50,595 samples
     # - valid: 1x1000 trajectories with 6 views per trajectory -> 6,000 samples
-    python -m nicr_scene_analysis_datasets.datasets.scenenetrgbd.prepare_dataset \
+    nicr_sa_prepare_dataset scenenetrgbd \
         /path/where/to/store/scenenetrgbd \
         ${SCENENETRGBD_DOWNLOAD_DIR} \
         --n-random-views-to-include-train 3 \

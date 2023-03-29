@@ -16,6 +16,14 @@ class NYUv2Meta:
     SPLIT_FILELIST_FILENAMES = {SPLITS[0]: 'train.txt', SPLITS[1]: 'test.txt'}
     SPLIT_DIRS = {SPLITS[0]: 'train', SPLITS[1]: 'test'}
 
+    _DATA_SAMPLE_KEYS = ('identifier', 'rgb', 'depth')
+    _ANNOTATION_SAMPLE_KEYS = ('semantic', 'instance', 'orientations',
+                               'scene', 'normal')
+    SPLIT_SAMPLE_KEYS = {
+        SPLITS[0]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
+        SPLITS[1]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS
+    }
+
     # note that mean and std differ depending on the selected depth_mode
     # however, the impact is marginal, therefore, we decided to use the
     # stats for refined depth for both cases

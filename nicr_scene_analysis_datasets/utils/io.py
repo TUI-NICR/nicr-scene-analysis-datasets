@@ -2,6 +2,8 @@
 """
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 """
+from typing import Any, Dict, List, Union
+
 from collections import OrderedDict
 from datetime import datetime
 import getpass
@@ -18,6 +20,9 @@ from tqdm import tqdm
 from ..version import get_version
 
 
+CREATION_META_FILENAME = 'creation_meta.json'
+
+
 class DownloadProgressBar(tqdm):
     def update_to(self, b=1, bsize=1, tsize=None):
         if tsize is not None:
@@ -25,13 +30,17 @@ class DownloadProgressBar(tqdm):
         self.update(b * bsize - self.n)
 
 
-def extract_zip(zip_filepath, output_dirpath):
+def extract_zip(zip_filepath: str, output_dirpath: str) -> None:
     with zipfile.ZipFile(zip_filepath, 'r') as zip_file:
         for m in tqdm(zip_file.infolist(), desc='Extracting'):
             zip_file.extract(m, output_dirpath)
 
 
-def download_file(url, output_filepath, display_progressbar=False):
+def download_file(
+    url: str,
+    output_filepath: str,
+    display_progressbar: bool = False
+) -> None:
     with DownloadProgressBar(unit='B', unit_scale=True,
                              miniters=1, desc=url.split('/')[-1],
                              disable=not display_progressbar) as t:
@@ -40,16 +49,18 @@ def download_file(url, output_filepath, display_progressbar=False):
                                    reporthook=t.update_to)
 
 
-def create_dir(path):
+def create_dir(path: str) -> None:
     if not os.path.isdir(path):
         os.makedirs(path, exist_ok=True)
 
 
-def get_files_by_extension(path,
-                           extension='.png',
-                           flat_structure=False,
-                           recursive=False,
-                           follow_links=True):
+def get_files_by_extension(
+    path: str,
+    extension: str = '.png',
+    flat_structure: bool = False,
+    recursive: bool = False,
+    follow_links: bool = True
+) -> Union[List, Dict]:
     # check input args
     if not os.path.exists(path):
         raise IOError("No such file or directory: '{}'".format(path))
@@ -89,8 +100,11 @@ def get_files_by_extension(path,
         return OrderedDict(sorted(filelist.items()))
 
 
-def create_or_update_creation_metafile(dataset_basepath):
-    filepath = os.path.join(dataset_basepath, 'creation_meta.json')
+def create_or_update_creation_metafile(
+    dataset_basepath: str,
+    **additional_meta
+) -> None:
+    filepath = os.path.join(dataset_basepath, CREATION_META_FILENAME)
 
     # load existing file
     if os.path.exists(filepath):
@@ -106,7 +120,14 @@ def create_or_update_creation_metafile(dataset_basepath):
         'timestamp': int(ts),
         'local_time': datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S'),
         'user': getpass.getuser(),
-        'version': '{}.{}.{}-{}'.format(*get_version(with_suffix=True))
+        'version': '{}.{}.{}-{}'.format(*get_version(with_suffix=True)),
+        'additional_meta': additional_meta or None
     })
     with open(filepath, 'w') as f:
         json.dump(meta, f, indent=4)
+
+
+def load_creation_metafile(dataset_basepath: str) -> Dict[str, Any]:
+    filepath = os.path.join(dataset_basepath, CREATION_META_FILENAME)
+    with open(filepath) as f:
+        return json.load(f)

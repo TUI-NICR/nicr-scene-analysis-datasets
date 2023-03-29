@@ -31,12 +31,14 @@ class Hypersim(HypersimMeta, RGBDDataset):
         split: str = 'train',
         subsample: Optional[int] = None,
         sample_keys: Tuple[str] = ('rgb', 'depth', 'semantic'),
+        use_cache: bool = False,
+        cameras: Optional[Tuple[str]] = None,
         depth_mode: str = 'raw',
         scene_use_indoor_domestic_labels: bool = False,
-        use_cache: bool = False,
         **kwargs: Any
     ) -> None:
         super().__init__(
+            dataset_path=dataset_path,
             depth_mode=depth_mode,
             sample_keys=sample_keys,
             use_cache=use_cache,
@@ -47,15 +49,24 @@ class Hypersim(HypersimMeta, RGBDDataset):
         # values that come from clipping the depth to uint16
         assert depth_mode in self.DEPTH_MODES
         assert split in self.SPLITS
+        assert all(sk in self.get_available_sample_keys(split) for sk in sample_keys)
 
         self._split = split
         self._depth_mode = depth_mode
-        self._cameras = self.CAMERAS
         self._scene_use_indoor_domestic_labels = scene_use_indoor_domestic_labels
 
+        # cameras
+        if cameras is None:
+            # use all available cameras (=default dummy camera)
+            self._cameras = self.CAMERAS
+        else:
+            # use subset of cameras (does not really apply to this dataset)
+            assert all(c in self.CAMERAS for c in cameras)
+            self._cameras = cameras
+
         self._subsample = subsample
-        if subsample:
-            print(f"Using subsampling: '{subsample}' for split '{split}'")
+        if subsample and not self._disable_prints:
+            print(f"Hypersim: using subsample: '{subsample}' for '{split}'")
 
         if dataset_path is not None:
             dataset_path = os.path.expanduser(dataset_path)
@@ -93,6 +104,10 @@ class Hypersim(HypersimMeta, RGBDDataset):
     def __len__(self) -> int:
         return len(self._filenames)
 
+    @staticmethod
+    def get_available_sample_keys(split: str) -> Tuple[str]:
+        return HypersimMeta.SPLIT_SAMPLE_KEYS[split]
+
     @property
     def cameras(self) -> Tuple[str]:
         return self._cameras
@@ -117,7 +132,7 @@ class Hypersim(HypersimMeta, RGBDDataset):
         self,
         directory: str,
         filename: str,
-    ) -> np.array:
+    ) -> np.ndarray:
         fp = os.path.join(self._dataset_path,
                           self.split,
                           directory,
@@ -130,21 +145,45 @@ class Hypersim(HypersimMeta, RGBDDataset):
 
         return img
 
-    def _load_rgb(self, idx) -> np.array:
+    def _load_rgb(self, idx) -> np.ndarray:
         return self._load(self.RGB_DIR, f'{self._filenames[idx]}.png')
 
     def _load_rgb_intrinsics(self, idx) -> IntrinsicCameraParametersNormalized:
-        return IntrinsicCameraParametersNormalized(
-            self.RGB_INTRINSICS_NORMALIZED[self.cameras[0]]    # single camera
-        )
+        scene, cam, _ = self._load_identifier(idx)
+        fp = os.path.join(self._dataset_path,
+                          self.split,
+                          self.RGB_INTRINSICS_DIR,
+                          scene,
+                          f'{cam}.json')
+        with open(fp, 'r') as f:
+            intrinsics = json.load(f)
 
-    def _load_depth(self, idx) -> np.array:
+        return IntrinsicCameraParametersNormalized({
+            **intrinsics,
+            # use defaults for remaining parameters
+            'k1': 0, 'k2': 0, 'k3': 0, 'k4': 0, 'k5': 0, 'k6': 0,
+            'p1': 0, 'p2': 0,
+        })
+
+    def _load_depth(self, idx) -> np.ndarray:
         return self._load(self.DEPTH_DIR, f'{self._filenames[idx]}.png')
 
     def _load_depth_intrinsics(self, idx) -> IntrinsicCameraParametersNormalized:
-        return IntrinsicCameraParametersNormalized(
-            self.DEPTH_INTRINSICS_NORMALIZED[self.cameras[0]]    # single camera
-        )
+        scene, cam, _ = self._load_identifier(idx)
+        fp = os.path.join(self._dataset_path,
+                          self.split,
+                          self.DEPTH_INTRINSICS_DIR,
+                          scene,
+                          f'{cam}.json')
+        with open(fp, 'r') as f:
+            intrinsics = json.load(f)
+
+        return IntrinsicCameraParametersNormalized({
+            **intrinsics,
+            # use defaults for remaining parameters
+            'k1': 0, 'k2': 0, 'k3': 0, 'k4': 0, 'k5': 0, 'k6': 0,
+            'p1': 0, 'p2': 0,
+        })
 
     def _load_identifier(self, idx: int) -> Tuple[str]:
         return SampleIdentifier(
@@ -161,28 +200,30 @@ class Hypersim(HypersimMeta, RGBDDataset):
 
         return ExtrinsicCameraParametersNormalized(extrinsics)
 
-    def _load_semantic(self, idx: int) -> np.array:
+    def _load_semantic(self, idx: int) -> np.ndarray:
         return self._load(self.SEMANTIC_DIR, f'{self._filenames[idx]}.png')
 
-    def _load_instance(self, idx: int) -> np.array:
+    def _load_instance(self, idx: int) -> np.ndarray:
         # Notes:
-        # - actually, only channel 1 and 2 hold the instance id
-        # - channel 0 holds the semantic id
-        # - channel 1 and 2 together encode a uint16 for the real instance id
-        #   (note that this instance id can correspond to multiple semantic
-        #   labels, to encode unique instance ids, use the semantic channel as
-        #   well)
-        # - hewever, since HyperSim is only used for pretraining and we need
-        #   this id for getting the orientation, only the instance id without
-        #   the semantic label is used
+        # - channel idx=0 holds the semantic class
+        # - channel idx=1 and idx=2 hold the instance id encoded as an uint16
+        # - combining semantic and instance might be useful for some tasks as an
+        #   instance id may correspond to multiple semantic classes:
+        #   - note this only affects few instances
+        #   - most overlaps are with void (unlabeled textures -> void label)
+        #    - ai_017_004: semantic classes 35 + 40
+        #        -> lamp + otherprop: some small stuff in the background
+        #    - ai_021_008: semantic classes 12 + 35
+        #        -> kitchen counter + lamp belong to same instance -> might be
+        #           an annotation fault
+        #    - ai_022_009: semantic classes 1 + 8:
+        #        -> door frame labeled as wall, but door instance contains both
+        #           the door frame and the door
         im = self._load(self.INSTANCES_DIR, f'{self._filenames[idx]}.png')
-        im_sliced = im[:, :, 1:3]
-        # array must be contiguous for uint16 view
-        im_sliced = np.ascontiguousarray(im_sliced).view(np.uint16)
-        # remove channel axis
-        instance_im = im_sliced[..., 0]
+        instance = im[:, :, 1].astype('uint16') << 8
+        instance += im[:, :, 2].astype('uint16')
 
-        return instance_im.astype('int32')
+        return instance.astype('int32')
 
     def _load_orientations(self, idx: int) -> Dict[int, float]:
         fp = os.path.join(self._dataset_path,
@@ -211,7 +252,7 @@ class Hypersim(HypersimMeta, RGBDDataset):
                           self.split,
                           self.SCENE_CLASS_DIR,
                           f'{self._filenames[idx]}.txt')
-        with open(fp, "r") as f:
+        with open(fp, 'r') as f:
             class_str = f.read().splitlines()[0].lower()
 
         class_idx = self.SCENE_LABEL_LIST.index(class_str)
@@ -223,7 +264,7 @@ class Hypersim(HypersimMeta, RGBDDataset):
 
         return class_idx
 
-    def _load_normal(self, idx: int) -> np.array:
+    def _load_normal(self, idx: int) -> np.ndarray:
         # format is xyz with invalid values (127, 127, 127)
         normal = self._load(self.NORMAL_DIR, f'{self._filenames[idx]}.png')
         # convert to float, thus, invalid values are (0., 0., 0.)

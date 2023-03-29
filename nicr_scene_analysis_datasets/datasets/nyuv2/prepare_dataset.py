@@ -67,29 +67,42 @@ def tar_file_to_cv2(tar, tar_filename):
     return file_decoded
 
 
-def main():
+def main(args=None):
     # argument parser
-    parser = ap.ArgumentParser(description='Prepare NYUv2 dataset.')
-    parser.add_argument('output_path',
-                        type=str,
-                        help='path where to store dataset')
-    parser.add_argument('--mat-filepath',
-                        default=None,
-                        help='filepath to NYUv2 mat file')
-    parser.add_argument('--enable-normal-extraction',
-                        action='store_true',
-                        default=False,
-                        help='filepath to NYUv2 normal')
-    parser.add_argument('--normal-filepath',
-                        default=None,
-                        help='filepath to NYUv2 normal')
-    parser.add_argument('--instance-min-relative-area',
-                        type=float,
-                        default=0.25/100,    # 0.25 %
-                        help='minimum relative area for valid instances (the '
-                             'actual number of pixels is calculated as '
-                             '`instance-min-relative-area`*height*width')
-    args = parser.parse_args()
+    parser = ap.ArgumentParser(
+        formatter_class=ap.ArgumentDefaultsHelpFormatter,
+        description='Prepare NYUv2 dataset.'
+    )
+    parser.add_argument(
+        'output_path',
+        type=str,
+        help="Path where to store dataset."
+    )
+    parser.add_argument(
+        '--mat-filepath',
+        default=None,
+        help="Filepath to NYUv2 mat file."
+    )
+    parser.add_argument(
+        '--enable-normal-extraction',
+        action='store_true',
+        default=False,
+        help="Enable normal extraction."
+    )
+    parser.add_argument(
+        '--normal-filepath',
+        default=None,
+        help="Filepath to precomputd NYUv2 normals."
+    )
+    parser.add_argument(
+        '--instance-min-relative-area',
+        type=float,
+        default=0.25/100,    # 0.25%
+        help="Minimum relative area for valid instances (the actual number of "
+             "pixels is calculated as "
+             "`instance-min-relative-area`*height*width"
+    )
+    args = parser.parse_args(args)
 
     # preprocess args and expand user
     output_path = os.path.expanduser(args.output_path)
