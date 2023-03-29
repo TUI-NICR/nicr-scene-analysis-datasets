@@ -15,9 +15,6 @@ Note: 3D meshes and surface reconstructions are not included in the preparation 
     ```bash
     # general usage
     python download-scannet.py -o /path/where/to/download/ScanNet
-
-    # internal usage
-    python download-scannet.py -o /datasets_nas/segmentation/ScanNet
     ```
 
 2. Convert dataset:

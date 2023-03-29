@@ -109,13 +109,6 @@ python -m pip install .[withpreparation,with3d] [--user]
 
 # for usage only
 python -m pip install . [--user]
-
-# internal usage (our PyPi-Server):
-# for preparation and usage
-python -m pip install nicr-scene-analysis-datasets[withpreparation] [--user]
-
-# for usage only (on NVIDIA Jetson or clusters)
-python -m pip install nicr-scene-analysis-datasets [--user]
 ```
 
 ## Prepare dataset
