@@ -82,7 +82,7 @@ def _parse_args():
         help="Whether to map semantic classes to benchmark format."
     )
     parser.add_argument(
-        '--write-scannet-label',
+        '--write-scannet-benchmark-ground-truth',
         action="store_true",
         help="If set, ground-truth label files that can be used for ScanNet "
              "benchmarking scripts will be written."
@@ -209,9 +209,9 @@ def main():
     args = _parse_args()
 
     # base output directories
-    output_path = osp.join(args.output_path, args.dataset + '_ply', args.split)
-    scannet_output_path = osp.join(args.output_path, args.dataset + '_gt',
-                                   '3d', args.split)
+    output_path = osp.join(args.output_path, args.split, 'ply')
+    scannet_output_path = osp.join(args.output_path, args.split,
+                                   'scannet_benchmark_gt')
 
     # helper function to load dataset
     def load_dataset(sample_keys):
@@ -320,7 +320,7 @@ def main():
         _save_ply(fp, filtered_pc, filtered_attributes, shift=args.shift)
 
         # write ScanNet ground-truth label files
-        if args.write_scannet_label:
+        if args.write_scannet_benchmark_ground_truth:
             filename = '_'.join(last_identifier[:-1]) + '.txt'
 
             # pure semantic labels

@@ -238,6 +238,10 @@ For further details, we refer to the usage in our [EMSANet repository](https://g
 The dataset can be used as an iterator (detectron2 usually does this) and can then be mapped with the custom mappers to generate the correct layout of the data.
 
 ## Changelog
+**Version 0.5.3 (Mar 31, 2023)**
+- *no dataset preparation related changes*
+- minor changes to `nicr_sa_prepare_labeled_point_clouds` and `nicr_sa_labeled_pc_viewer`
+
 **Version 0.5.2 (Mar 28, 2023)**
 - hypersim: change instance encoding: do not view G and B channel as uint16 use bit shifting instead
 - add new scripts and update entry points:

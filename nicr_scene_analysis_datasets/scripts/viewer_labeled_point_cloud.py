@@ -24,12 +24,14 @@ from .common import print_section
 
 USAGE = inspect.cleandoc(
     """
-    Use the keys 1-5 to switch between displaying:
-    1: color,
-    2: semantic ground-truth annotations,
-    3: instance ground-truth annotations,
-    4: predicted semantic labels (see --semantic-label-file`, and
-    5: predicted instance labels (see --instance-label-file`).
+    Use the keys 1-7 to switch between displaying:
+    1: color given in ply file,
+    2: semantic ground-truth annotations given in label field in ply file,
+    3: instance ground-truth annotations given in label field in ply file,
+    4: additional (predicted) semantic labels given by `--semantic-label-filepath`,
+    5: additional (predicted) instance labels given by `--instance-label-filepath`,
+    6: additional (predicted) semantic labels given by `--panoptic-label-filepath`,
+    7: additional (predicted) instance labels given by `--panoptic-label-filepath`.
 
     Press h to show further help and q to quit.
     """
@@ -53,10 +55,12 @@ def _parse_args():
     parser.add_argument(
         '--mode',
         type=str,
-        choices=('color',
-                 'semantic', 'instance',
-                 'additional_semantic', 'additional_instance'),
-        default='color',
+        choices=(
+            'ply_color', 'ply_semantic', 'ply_instance',
+            'additional_semantic', 'additional_instance',
+            'additional_panoptic_semantic', 'additional_panoptic_instance'
+        ),
+        default='ply_color',
         help='Render mode (use keys to switch)'
     )
     parser.add_argument(
@@ -88,10 +92,33 @@ def _parse_args():
              "Useful for visualizing predictions."
     )
     parser.add_argument(
+        '--panoptic-label-filepath',
+        type=str,
+        default=None,
+        help="Path to txt file containing the panoptic label as sem*shift+ins "
+             "for each vertex. See `--use-scannet-format` for 'shift'. Useful "
+             "for visualizing predictions."
+    )
+    parser.add_argument(
         '--use-scannet-format',
         action='store_true',
         help="If specified, labels will be taken as sem*1000+inst instead of "
              "our sem*(1<<16)+ins encoding."
+    )
+    parser.add_argument(
+        '--use-panoptic-labels-as-instance-labels',
+        action='store_true',
+        help="If specified, panoptic labels will be used as instance labels. "
+             "This is useful if panoptic labels with 0-based instance ids per "
+             "semantic class are given, which is common after panoptic "
+             "merging. Consider using `--enumerate-instances` as well, to get "
+             "smaller instance ids."
+    )
+    parser.add_argument(
+        '--enumerate-instances',
+        action='store_true',
+        help="If specified, instance labels will be enumerated before "
+             "visualization. This is useful to get smaller instance ids. "
     )
 
     # experimental
@@ -112,11 +139,20 @@ def _parse_args():
     return parser.parse_args()
 
 
-def _get_instance_colors(instance_labels, instance_cmap):
-    # convert to continuos labels
-    # instance_labels = np.where(
-    #     np.unique(instance_labels) == instance_labels[:, np.newaxis]
-    # )[1]
+def _get_instance_colors(instance_labels,
+                         instance_cmap,
+                         enumerate_instances=False):
+
+    # enumerate instances
+    if enumerate_instances:
+        instance_labels_ = np.zeros_like(instance_labels)    # 0: no instance
+        for new_id, old_id in enumerate(np.unique(instance_labels), start=1):
+            if old_id == 0:
+                # no instance label
+                continue
+            instance_labels_[instance_labels == old_id] = new_id
+        instance_labels = instance_labels_
+
     if instance_labels.max() >= len(instance_cmap):
         warnings.warn(
             f"Color map has only {len(instance_cmap)} colors, but the "
@@ -126,7 +162,51 @@ def _get_instance_colors(instance_labels, instance_cmap):
     return instance_cmap[instance_labels % len(instance_cmap)]
 
 
-def _load_ply(filepath, semantic_cmap, instance_cmap, use_scannet_format=False):
+def split_panoptic_labels(panoptic_labels,
+                          use_scannet_format=False,
+                          use_panoptic_as_instance=False):
+    if use_scannet_format:
+        # uint16
+        semantic_labels = panoptic_labels // 1000
+        instance_labels = panoptic_labels - semantic_labels * 1000
+    else:
+        # uint32
+        semantic_labels = panoptic_labels >> 16
+        instance_labels = panoptic_labels & 0xFFFF
+
+    if not use_panoptic_as_instance:
+        # check for same instance ids with multiple semantic classes (typically
+        # happens when merging semantic and instance to panoptic labels)
+        uniques, indices = np.unique(instance_labels, return_index=True)
+        for instance_id, mask in zip(uniques, indices):
+            if instance_id == 0:
+                # no instance label
+                continue
+
+            semantic_classes = np.unique(semantic_labels[mask])
+            if len(semantic_classes) > 1:
+                # multiple semantic labels for the same instance id
+                warnings.warn(
+                    f"Instance id {instance_id} has multiple semantic labels: "
+                    f"{semantic_classes}. Consider adding "
+                    "`--use-panoptic-labels-as-instance-labels` to get unique "
+                    "instance ids and `--enumerate-instances` to get smaller "
+                    "instance ids."
+                )
+                break
+    else:
+        # use panoptic labels as instance labels
+        instance_labels = panoptic_labels
+
+    return semantic_labels, instance_labels
+
+
+def _load_ply(filepath,
+              semantic_cmap,
+              instance_cmap,
+              use_scannet_format=False,
+              use_panoptic_as_instance=False,
+              enumerate_instances=False):
     plydata = plyfile.PlyData.read(filepath)
 
     num_verts = plydata['vertex'].count
@@ -150,29 +230,31 @@ def _load_ply(filepath, semantic_cmap, instance_cmap, use_scannet_format=False):
     if 'label' in plydata['vertex']:
         labels = plydata['vertex'].data['label']    # uint16 / uint32
 
-        if use_scannet_format:
-            # uint16
-            semantic_labels = labels // 1000
-            instance_labels = labels - semantic_labels * 1000
-        else:
-            # uint32
-            semantic_labels = labels >> 16
-            instance_labels = labels & 0xFFFF
+        # split labels (panoptic / semantic-instance)
+        semantic_labels, instance_labels = split_panoptic_labels(
+            panoptic_labels=labels,
+            use_scannet_format=use_scannet_format,
+            use_panoptic_as_instance=use_panoptic_as_instance
+        )
 
         # semantic colors
         semantic_colors = semantic_cmap[semantic_labels]
 
         # instance colors
-        instance_colors = _get_instance_colors(instance_labels, instance_cmap)
+        instance_colors = _get_instance_colors(
+            instance_labels=instance_labels,
+            instance_cmap=instance_cmap,
+            enumerate_instances=enumerate_instances
+        )
     else:
         # we do not have annotations
         instance_colors = np.zeros_like(colors)
         semantic_colors = np.zeros_like(colors)
 
     labels = {
-        'color': colors.astype('float64') / 255,
-        'instance': instance_colors.astype('float64') / 255,
-        'semantic': semantic_colors.astype('float64') / 255
+        'ply_color': colors.astype('float64') / 255,
+        'ply_instance': instance_colors.astype('float64') / 255,
+        'ply_semantic': semantic_colors.astype('float64') / 255
     }
 
     pc.colors = o3d.utility.Vector3dVector(colors)
@@ -193,7 +275,9 @@ def main():
         filepath=args.filepath,
         semantic_cmap=semantic_cmap,
         instance_cmap=instance_cmap,
-        use_scannet_format=args.use_scannet_format
+        use_scannet_format=args.use_scannet_format,
+        use_panoptic_as_instance=args.use_panoptic_labels_as_instance_labels,
+        enumerate_instances=args.enumerate_instances
     )
     pc.colors = o3d.utility.Vector3dVector(labels[args.mode])
 
@@ -208,11 +292,10 @@ def main():
     # print usage
     print_section("Usage", USAGE)
 
-    # load additional predicted labels
+    # load additional (predicted) labels
     if args.semantic_label_filepath is not None:
         semantic_labels = np.loadtxt(args.semantic_label_filepath,
                                      dtype=np.uint64)
-
         assert len(semantic_labels) == len(np.array(pc.points))
 
         labels['additional_semantic'] = semantic_cmap[semantic_labels] / 255
@@ -220,11 +303,30 @@ def main():
     if args.instance_label_filepath is not None:
         instance_labels = np.loadtxt(args.instance_label_filepath,
                                      dtype=np.uint64)
-
         assert len(instance_labels) == len(np.array(pc.points))
 
         labels['additional_instance'] = _get_instance_colors(
-            instance_labels, instance_cmap
+            instance_labels=instance_labels,
+            instance_cmap=instance_cmap,
+            enumerate_instances=args.enumerate_instances
+        ) / 255
+
+    if args.panoptic_label_filepath is not None:
+        panoptic_labels = np.loadtxt(args.panoptic_label_filepath,
+                                     dtype=np.uint64)
+        assert len(panoptic_labels) == len(np.array(pc.points))
+
+        semantic_labels, instance_labels = split_panoptic_labels(
+            panoptic_labels=panoptic_labels,
+            use_scannet_format=args.use_scannet_format,
+            use_panoptic_as_instance=args.use_panoptic_labels_as_instance_labels
+        )
+        labels['additional_panoptic_semantic'] = \
+            semantic_cmap[semantic_labels] / 255
+        labels['additional_panoptic_instance'] = _get_instance_colors(
+            instance_labels=instance_labels,
+            instance_cmap=instance_cmap,
+            enumerate_instances=args.enumerate_instances
         ) / 255
 
     visualizer = o3d.visualization.VisualizerWithKeyCallback()
@@ -248,17 +350,34 @@ def main():
     visualizer.add_geometry(pc)
 
     # add callback for switching between modes
-    visualizer.register_key_callback(ord('1'),
-                                     _change_mode('color'))
-    visualizer.register_key_callback(ord('2'),
-                                     _change_mode('semantic'))
-    visualizer.register_key_callback(ord('3'),
-                                     _change_mode('instance'))
-    visualizer.register_key_callback(ord('4'),
-                                     _change_mode('additional_semantic'))
-    visualizer.register_key_callback(ord('5'),
-                                     _change_mode('additional_instance'))
-
+    visualizer.register_key_callback(
+        ord('1'),
+        _change_mode('ply_color')
+    )
+    visualizer.register_key_callback(
+        ord('2'),
+        _change_mode('ply_semantic')
+    )
+    visualizer.register_key_callback(
+        ord('3'),
+        _change_mode('ply_instance')
+    )
+    visualizer.register_key_callback(
+        ord('4'),
+        _change_mode('additional_semantic')
+    )
+    visualizer.register_key_callback(
+        ord('5'),
+        _change_mode('additional_instance')
+    )
+    visualizer.register_key_callback(
+        ord('6'),
+        _change_mode('additional_panoptic_semantic')
+    )
+    visualizer.register_key_callback(
+        ord('7'),
+        _change_mode('additional_panoptic_instance')
+    )
     # experimental: visualize correspondences between the (grund-truth) point
     # cloud given by args.filepath and a second point cloud given by
     # args.second_pc_filepath, e.g., a mapped representation
