@@ -48,7 +48,7 @@ register_dataset_to_d2(
 register_dataset_to_d2(
     name_prefix='scenenetrgbd',
     dataset_class=SceneNetRGBD,
-    sample_keys=('identifier', 'rgb', 'semantic')
+    sample_keys=('identifier', 'rgb', 'semantic', 'instance')
 )
 register_dataset_to_d2(
     name_prefix='sunrgbd',

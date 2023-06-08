@@ -27,7 +27,7 @@ class SUNRGBDMeta:
         SPLITS[1]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS
     }
 
-    # note that mean and std differ depending on the selected depth_mode
+    # note that depth stats differ depending on the selected depth_mode
     # however, the impact is marginal, therefore, we decided to use the
     # stats for refined depth for both cases
     # stats for raw:
@@ -36,11 +36,25 @@ class SUNRGBDMeta:
     # - min: 161.0
     # - max: 65400.0
     # see: my_dataset.depth_compute_stats() for calculation
-    TRAIN_SPLIT_DEPTH_STATS = DepthStats(    # 1/10 mm -> 1 = 0.1mm
+    TRAIN_SPLIT_DEPTH_STATS = DepthStats(
         min=1.0,
         max=65528.0,
         mean=19025.14930492213,
         std=9880.916071806689
+    )
+
+    # we also precomputed the depth stats for depth_force_mm=True,
+    # again we use the stats for refined depth for both cases
+    # stats for raw:
+    # - mean: 2290.0433932002597
+    # - std: 1112.3326688162333
+    # - min: 8175.0
+    # - max: 20.0
+    TRAIN_SPLIT_DEPTH_STATS_MM = DepthStats(
+        min=0.0,
+        max=8191.0,
+        mean=2378.143341528692,
+        std=1235.114890282653
     )
 
     DEPTH_MODES = ('refined', 'raw')

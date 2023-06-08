@@ -168,6 +168,37 @@ class DatasetBase(abc.ABC):
     def get_available_sample_keys(split: str) -> Tuple[str]:
         pass
 
+    def identifier2idx(
+        self,
+        identifier: SampleIdentifier,
+        ensure_single_match: bool = True
+    ) -> int:
+        # this function might be useful for some use cases, however, as it
+        # always iterates all identifiers it is not very efficient, do not
+        # call it to much
+        idx = -1
+        for i in range(len(self)):
+            if self._load_identifier(i) == identifier:
+                if not ensure_single_match:
+                    # first match is enough
+                    return i
+                else:
+                    if -1 == idx:
+                        # first match
+                        idx = i
+                    else:
+                        # another match, raise error
+                        raise ValueError(
+                            f"Found at least two matches for identifier: "
+                            f"'{identifier}, indices: {idx} and {i}'."
+                        )
+
+        if -1 != idx:
+            # we got a single match, return it
+            return idx
+
+        raise ValueError(f"Could not find identifier: '{identifier}'")
+
     @abc.abstractmethod
     def _load_identifier(self, idx: int) -> SampleIdentifier:
         pass
