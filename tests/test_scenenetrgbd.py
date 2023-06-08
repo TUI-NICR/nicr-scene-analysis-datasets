@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Simple (interface) tests for SceneNetRGBD dataset
+Simple (interface) tests for SceneNet RGB-D dataset
 
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 """
@@ -12,6 +12,7 @@ from nicr_scene_analysis_datasets.utils.testing import DATASET_PATH_DICT
 
 N_CLASSES_WITH_VOID = 13 + 1
 N_SAMPLES = {'train': 50595, 'valid': 6000}
+N_SCENE_CLASSES = 5
 
 
 @pytest.mark.parametrize('split', ('train', 'valid'))
@@ -33,6 +34,9 @@ def test_dataset(split):
     assert dataset.semantic_n_classes_without_void == N_CLASSES_WITH_VOID - 1
     assert len(dataset.semantic_class_names) == dataset.semantic_n_classes
     assert len(dataset.semantic_class_names_without_void) == dataset.semantic_n_classes_without_void
+
+    assert len(dataset.scene_class_names) == N_SCENE_CLASSES
+
     assert len(dataset.semantic_class_colors) == dataset.semantic_n_classes
     assert len(dataset.semantic_class_colors_without_void) == dataset.semantic_n_classes_without_void
 
@@ -53,6 +57,10 @@ def test_dataset(split):
         assert sample['depth'].ndim == 2
         # semantic
         assert sample['semantic'].ndim == 2
+        # instance
+        assert sample['instance'].ndim == 2
+        # scene
+        assert isinstance(sample['scene'], int)
 
         if i >= 9:
             break

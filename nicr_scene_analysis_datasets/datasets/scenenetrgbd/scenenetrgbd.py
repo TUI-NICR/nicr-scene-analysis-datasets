@@ -4,15 +4,18 @@
 .. codeauthor:: Söhnke Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
 """
 from ...dataset_base import DepthStats
+from ...dataset_base import SceneLabel
+from ...dataset_base import SceneLabelList
 from ...dataset_base import SemanticLabel
 from ...dataset_base import SemanticLabelList
 
 
 class SceneNetRGBDMeta:
     SPLITS = ('train', 'valid')
+    SPLIT_FILELIST_FILENAMES = {SPLITS[0]: 'train.txt', SPLITS[1]: 'valid.txt'}
 
     _DATA_SAMPLE_KEYS = ('identifier', 'rgb', 'depth')
-    _ANNOTATION_SAMPLE_KEYS = ('semantic',)
+    _ANNOTATION_SAMPLE_KEYS = ('semantic', 'instance', 'scene')
     SPLIT_SAMPLE_KEYS = {
         SPLITS[0]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
         SPLITS[1]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
@@ -38,6 +41,8 @@ class SceneNetRGBDMeta:
     RGB_DIR = 'rgb'
     SEMANTIC_13_DIR = 'semantic_13'
     SEMANTIC_13_COLORED_DIR = 'semantic_13_colored'
+    INSTANCES_DIR = 'instance'
+    SCENE_CLASS_DIR = 'scene'
 
     # number of classes without void (NYUv2 classes)
     SEMANTIC_N_CLASSES = 13
@@ -59,3 +64,55 @@ class SceneNetRGBDMeta:
         SemanticLabel('wall',      False, None, (249, 139, 0)),
         SemanticLabel('window',    True,  None, (225, 228, 194)),
     ))
+
+    # original scene labels
+    SCENE_LABEL_LIST = SceneLabelList((
+        SceneLabel('bathroom'),
+        SceneLabel('bedroom'),
+        SceneLabel('kitchen'),
+        SceneLabel('living_room'),
+        SceneLabel('office')
+    ))
+
+    # scene labels for indoor domestic environments
+    # mapping dict with new labels as keys and tuple of old labels as values
+    SCENE_LABEL_MAPPING_INDOOR_DOMESTIC = {
+        SceneLabel('void'): (
+        ),
+        SceneLabel('bathroom'): (
+            SceneLabel('bathroom'),
+        ),
+        SceneLabel('bedroom'): (
+            SceneLabel('bedroom'),
+        ),
+        SceneLabel('dining room'): (
+        ),
+        SceneLabel('discussion room'): (
+        ),
+        SceneLabel('hallway'): (
+        ),
+        SceneLabel('kitchen'): (
+            SceneLabel('kitchen'),
+        ),
+        SceneLabel('living room'): (
+            SceneLabel('living_room'),
+        ),
+        SceneLabel('office'): (
+            SceneLabel('office'),
+        ),
+        SceneLabel('other indoor'): (
+        ),
+        SceneLabel('stairs'): (
+        )
+    }
+
+    SCENE_LABEL_LIST_INDOOR_DOMESTIC = SceneLabelList(
+        tuple(SCENE_LABEL_MAPPING_INDOOR_DOMESTIC.keys())
+    )
+    # create index mapping
+    SCENE_LABEL_IDX_TO_SCENE_LABEL_INDOOR_DOMESTIC_IDX = {}
+    for new_label, old_labels in SCENE_LABEL_MAPPING_INDOOR_DOMESTIC.items():
+        for old_label in old_labels:
+            old_idx = SCENE_LABEL_LIST.index(old_label)
+            new_idx = SCENE_LABEL_LIST_INDOOR_DOMESTIC.index(new_label)
+            SCENE_LABEL_IDX_TO_SCENE_LABEL_INDOOR_DOMESTIC_IDX[old_idx] = new_idx

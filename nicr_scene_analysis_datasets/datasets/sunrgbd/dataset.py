@@ -92,11 +92,10 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
             print(f"Loaded SUNRGBD dataset without files")
 
         # build config object
-        depth_stats = self.TRAIN_SPLIT_DEPTH_STATS
-        if self._depth_force_mm:
-            depth_stats = DepthStats(
-                **{k: v/10 for k, v in asdict(depth_stats).items()}
-            )
+        if not self._depth_force_mm:
+            depth_stats = self.TRAIN_SPLIT_DEPTH_STATS
+        else:
+            depth_stats = self.TRAIN_SPLIT_DEPTH_STATS_MM
 
         if self._scene_use_indoor_domestic_labels:
             # use remapped scene labels
@@ -157,7 +156,7 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
         directory: str,
         idx: int,
         extension: str = '.png'
-    ) -> Union[Dict, np.ndarray]:
+    ) -> Union[Dict, str, np.ndarray]:
         # get filename depending on current camera
         filename = self._get_filename(idx)
 
@@ -200,14 +199,56 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
         })
 
     def _load_depth(self, idx: int) -> np.ndarray:
-        if self._depth_mode == 'raw':
+        # load depth image
+        if 'raw' == self._depth_mode:
             depth = self._load(self.DEPTH_DIR_RAW, idx)
         else:
             depth = self._load(self.DEPTH_DIR, idx)
 
-        if self._depth_force_mm:
-            # depth is in 1/10 mm, convert to mm
-            depth //= 10
+        if not self._depth_force_mm:
+            # nothing to do, return raw depth (use this for benchmarking)
+            return depth
+
+        # convert to mm (use this for applications)
+
+        # depth is encoded in only 13 of the 16 bits, i.e., bits 3-15 store the
+        # actual depth information
+        # see: http://velastin.dynu.com/G3D/G3D.html:
+        #    The depth information was also mapped to the colour coordinate
+        #    space and stored in a 16-bit greyscale. The 16-bits of depth
+        #    data contains 13 bits for depth data and 3 bits to identify
+        #    the player.
+
+        # see: https://social.msdn.microsoft.com/Forums/en-US/3fe21ce5-4b75-4b31-b73d-2ff48adfdf52/kinect-uses-12-bits-or-13-bits-for-depth-data?forum=kinectsdk
+
+        # original code from toolbox:
+        # -> SUNRGBDtoolbox/SUNRGBDtoolbox/readData/read3dPoints.m:
+        #     function [rgb,points3d,depthInpaint,imsize]=read3dPoints(data)
+        #             depthVis = imread(data.depthpath);
+        #             imsize = size(depthVis);
+        #             depthInpaint = bitor(bitshift(depthVis,-3), bitshift(depthVis,16-3));
+        #             depthInpaint = single(depthInpaint)/1000;
+        #             depthInpaint(depthInpaint >8)=8;
+        #             [rgb,points3d]=read_3d_pts_general(depthInpaint,data.K,size(depthInpaint),data.rgbpath);
+        #             points3d = (data.Rtilt*points3d')';
+
+        # NOTE:
+        # we only apply the shift to the right by 3 bits to get rid of the
+        # lowest three bits and then clip to 8m; in the toolbox code above, the
+        # lowest three bits are added again to the highest bits, and then the
+        # depth values are clipped to 8000 (=8m); we do not know the exact
+        # reason for the first step as subsequent clipping to 8000 again
+        # excludes the highest 3 bits
+        depth = np.right_shift(depth, 3)
+
+        # clip to 8m (note, number of pixels affected is small, i.e., ~0.03%)
+        if 'raw' == self._depth_mode:
+            # as depth mode is 'raw', we set the values to zero to
+            # indicate invalid
+            depth[depth > 8000] = 0
+        else:
+            # for the refined depth images, we follow the toolbox code
+            depth[depth > 8000] = 8000
 
         return depth
 
@@ -215,7 +256,14 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
         self,
         idx: int
     ) -> IntrinsicCameraParametersNormalized:
-        a = 0.0001 if not self._depth_force_mm else 0.001   # depth to meters
+        if not self._depth_force_mm:
+            # see above: d_mm = d >> 3 --> /8 --> *0.125 * 0.001
+            # note that this is only an approximation, as the lower 3 bits
+            # are not removed
+            a = 0.000125
+        else:
+            a = 0.001   # depth to meters
+
         return IntrinsicCameraParametersNormalized({
             # load fx, fy, cx, and cy
             **self._load(self.INTRINSICS_DIR, idx, '.json'),

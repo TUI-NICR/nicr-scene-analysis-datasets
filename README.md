@@ -13,11 +13,11 @@ Currently, this packages features the following datasets and annotations:
 | [Hypersim](https://machinelearning.apple.com/research/hypersim)       | v052/v052      | RGB-D     | &#10003; | &#10003; | (&#10003;)\*\* | &#10003; | (&#10003;)\*\*\*\* | &#10003; | &#10003;   | &#10003;   |
 | [NYUv2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)     | v030/v040      | RGB-D     | &#10003; | &#10003; | &#10003;\*\*\* | &#10003; | &#10003;           |          |            |            |
 | [ScanNet](http://www.scan-net.org/)                                   | v051/v051      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          | &#10003;   | &#10003;   |
-| [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet-rgbd.html)  | v030/v040      | RGB-D     | &#10003; |          |                |          |                    |          |            |            |
+| [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet-rgbd.html)  | v054/v054      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          |            |            |
 | [SUNRGB-D](https://rgbd.cs.princeton.edu/)                            | v030/v040      | RGB-D     | &#10003; | &#10003; |   &#10003;     | &#10003; |                    | &#10003; | &#10003;   | &#10003;   |
 
 \* Both depth and disparity are available.  
-\*\* Orientations are available but not consistent for instances of the same semantic class (see Hypersim).  
+\*\* Orientations are available but not consistent for instances within a semantic class (see Hypersim).  
 \*\*\* Annotated by hand in 3D for instances of some relevant semantic classes.  
 \*\*\*\* As of Nov 2022, [precomputed normals](https://cs.nyu.edu/~deigen/dnl/normals_gt.tgz) are not publicly available any longer. We are trying to reach the authors.
 
@@ -74,8 +74,8 @@ in IEEE International Conference on Robotics and Automation (ICRA), pp. 9221-922
 ```bibtex
 @inproceedings{semanticndtmapping2022icra,
   author={Seichter, Daniel and Langer, Patrick and Wengefeld, Tim and Lewandowski, Benjamin and H{\"o}chemer, Dominik and Gross, Horst-Michael},
-  booktitle={2022 International Conference on Robotics and Automation (ICRA)}, 
-  title={Efficient and Robust Semantic Mapping for Indoor Environments}, 
+  booktitle={2022 International Conference on Robotics and Automation (ICRA)},
+  title={Efficient and Robust Semantic Mapping for Indoor Environments},
   year={2022},
   pages={9221-9227},
   doi={10.1109/ICRA46639.2022.9812205}}
@@ -128,7 +128,7 @@ Please follow the instructions given in the respective dataset folder to prepare
 
 We provide several command-line entry points for common tasks:
   - `nicr_sa_prepare_dataset`: prepare a dataset for usage
-  - `nicr_sa_prepare_labeled_point_clouds`: create labeled point clouds as ply files similar to ScanNet benchmark 
+  - `nicr_sa_prepare_labeled_point_clouds`: create labeled point clouds as ply files similar to ScanNet benchmark
   - `nicr_sa_depth_viewer`: viewer for depth images
   - `nicr_sa_semantic_instance_viewer`: viewer for semantic and instance (and panoptic) annotations
   - `nicr_sa_labeled_pc_viewer`: viewer for labeled point clouds
@@ -238,12 +238,22 @@ For further details, we refer to the usage in our [EMSANet repository](https://g
 The dataset can be used as an iterator (detectron2 usually does this) and can then be mapped with the custom mappers to generate the correct layout of the data.
 
 ## Changelog
+**Version 0.5.4 (Jun 07, 2023)**
+- SUNRGB-D:
+  - fix for `depth_force_mm=True`:
+    - divide by 8 (shift by 3 to right) instead of divide by 10
+    - updated depth stats
+    - for more details, see notes in [nicr_scene_analysis_datasets/datasets/sunrgbd/dataset.py](nicr_scene_analysis_datasets/datasets/sunrgbd/dataset.py#L213)
+    - note, for `depth_force_mm=False`, nothing changed, everything is as before (EMSANet / EMSAFormer)
+- SceneNet RGB-D: add support for instances and scene classes
+- add `identifier2idx()` to base dataset class to search for samples by identifier
+
 **Version 0.5.3 (Mar 31, 2023)**
 - *no dataset preparation related changes*
 - minor changes to `nicr_sa_prepare_labeled_point_clouds` and `nicr_sa_labeled_pc_viewer`
 
 **Version 0.5.2 (Mar 28, 2023)**
-- hypersim: change instance encoding: do not view G and B channel as uint16 use bit shifting instead
+- Hypersim: change instance encoding: do not view G and B channel as uint16 use bit shifting instead
 - add new scripts and update entry points:
   - `nicr_sa_prepare_dataset`: prepare a dataset (replaces `python -m ...` calls)
   - `nicr_sa_prepare_labeled_point_clouds`: create labeled point clouds as ply files similar to ScanNet benchmark
@@ -253,7 +263,7 @@ The dataset can be used as an iterator (detectron2 usually does this) and can th
 
 **Version 0.5.1 (Mar 01, 2023)**
 - refactor MIRA reader to support multiple datasets, create an abstract base class
-- ScanNet: 
+- ScanNet:
   - blacklist broken frames due to invalid extrinsic parameters (see datasets/scannet/scannet.py)
 - Hypersim:
   - IMPORTANT: version 0.5.1 is not compatible with ealier versions of the dataset
@@ -274,7 +284,7 @@ The dataset can be used as an iterator (detectron2 usually does this) and can th
 
 **Version 0.4.1 (Nov 12, 2022)**
 - *no dataset preparation related changes*
-- make normal extraction for NYUv2 dataset optional as the [precomputed normals](https://cs.nyu.edu/~deigen/dnl/normals_gt.tgz) are not publicly available any longer 
+- make normal extraction for NYUv2 dataset optional as the [precomputed normals](https://cs.nyu.edu/~deigen/dnl/normals_gt.tgz) are not publicly available any longer
 
 **Version 0.4.0 (July 15, 2022)**
 - *no dataset preparation related changes*

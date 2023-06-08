@@ -34,5 +34,19 @@
             "env": {
             },
         },
+        {
+            "name": "create scennetrgbd",
+            "type": "python",
+            "request": "launch",
+            "module": "nicr_scene_analysis_datasets.datasets.scenenetrgbd.prepare_dataset",
+            "console": "integratedTerminal",
+            "args": [
+                "/datasets_nas/nicr_scene_analysis_datasets/version_test/scenenetrgbd",
+                "/datasets_nas/segmentation/SceneNetRGBD",
+                "--n-random-views-to-include-train", "3",
+                "--n-random-views-to-include-valid", "6",
+                "--force-at-least-n-classes-in-view", "4",
+            ],
+        },
     ]
 }

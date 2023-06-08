@@ -2,8 +2,9 @@
 """
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 """
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
+import json
 import os
 
 import cv2
@@ -27,6 +28,7 @@ class SceneNetRGBD(SceneNetRGBDMeta, RGBDDataset):
         cameras: Optional[Tuple[str]] = None,
         depth_mode: str = 'refined',
         semantic_n_classes: int = 13,
+        scene_use_indoor_domestic_labels: bool = False,
         **kwargs: Any
     ) -> None:
         super().__init__(
@@ -44,6 +46,7 @@ class SceneNetRGBD(SceneNetRGBDMeta, RGBDDataset):
         self._split = split
         self._depth_mode = depth_mode
         self._cameras = self.CAMERAS
+        self._scene_use_indoor_domestic_labels = scene_use_indoor_domestic_labels
 
         # cameras
         if cameras is None:
@@ -60,24 +63,26 @@ class SceneNetRGBD(SceneNetRGBDMeta, RGBDDataset):
             assert os.path.exists(dataset_path), dataset_path
             self._dataset_path = dataset_path
 
-            # load file lists
-            def _loadtxt(fn):
-                return np.loadtxt(os.path.join(self._dataset_path, fn),
-                                  dtype=str)
+            # load file list
+            fp = os.path.join(self._dataset_path,
+                              self.SPLIT_FILELIST_FILENAMES[self._split])
+            with open(fp, 'r') as f:
+                self._files = f.read().splitlines()
 
-            self._files = {
-                'rgb': _loadtxt(f'{self._split}_rgb.txt'),
-                'depth': _loadtxt(f'{self._split}_depth.txt'),
-                'label': _loadtxt(f'{self._split}_labels_{self._semantic_n_classes}.txt')
-            }
-            assert all(len(li) == len(self._files['rgb'])
-                       for li in self._files.values())
         elif not self._disable_prints:
             print(f"Loaded SceneNetRGBD dataset without files")
+
+        if self._scene_use_indoor_domestic_labels:
+            # use remapped scene labels
+            scene_label_list = self.SCENE_LABEL_LIST_INDOOR_DOMESTIC
+        else:
+            # use original scene labels
+            scene_label_list = self.SCENE_LABEL_LIST
 
         # build config object
         self._config = build_dataset_config(
             semantic_label_list=self.SEMANTIC_LABEL_LIST,
+            scene_label_list=scene_label_list,
             depth_stats=self.TRAIN_SPLIT_DEPTH_STATS
         )
 
@@ -101,34 +106,62 @@ class SceneNetRGBD(SceneNetRGBDMeta, RGBDDataset):
         return self._depth_mode
 
     def __len__(self) -> int:
-        return len(self._files['rgb'])
+        return len(self._files)
 
     @staticmethod
     def get_available_sample_keys(split: str) -> Tuple[str]:
         return SceneNetRGBDMeta.SPLIT_SAMPLE_KEYS[split]
 
-    def _load(self, directory, filename) -> np.ndarray:
+    def _load(
+        self,
+        directory: str,
+        idx: int,
+        extension: str = '.png'
+    ) -> Union[str, np.ndarray]:
+        # determine filepath
         fp = os.path.join(self._dataset_path,
                           self.split,
                           directory,
-                          filename)
-        img = cv2.imread(fp, cv2.IMREAD_UNCHANGED)
-        if img is None:
-            raise IOError(f"Unable to load image: '{fp}'")
-        if img.ndim == 3:
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                          f'{self._files[idx]}{extension}')
 
-        return img
+        # load data
+        if '.txt' == extension:
+            with open(fp, 'r') as f:
+                data = f.readline()
+        else:
+            # default load using OpenCV
+            data = cv2.imread(fp, cv2.IMREAD_UNCHANGED)
+            if data is None:
+                raise IOError(f"Unable to load image: '{fp}'")
+            if data.ndim == 3:
+                data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
+
+        return data
 
     def _load_rgb(self, idx: int) -> np.ndarray:
-        return self._load(self.RGB_DIR, self._files['rgb'][idx])
+        return self._load(self.RGB_DIR, idx, '.jpg')
 
     def _load_depth(self, idx: int) -> np.ndarray:
-        return self._load(self.DEPTH_DIR, self._files['depth'][idx])
+        return self._load(self.DEPTH_DIR, idx)
 
     def _load_identifier(self, idx: int) -> Tuple[str]:
-        fn, _ = os.path.splitext(self._files['rgb'][idx])
+        fn = self._files[idx]
         return SampleIdentifier(os.path.normpath(fn).split(os.sep))
 
     def _load_semantic(self, idx: int) -> np.ndarray:
-        return self._load(self.SEMANTIC_13_DIR, self._files['label'][idx])
+        return self._load(self.SEMANTIC_13_DIR, idx)
+
+    def _load_instance(self, idx: int) -> np.ndarray:
+        return self._load(self.INSTANCES_DIR, idx).astype('int32')
+
+    def _load_scene(self, idx: int) -> int:
+        class_str = self._load(self.SCENE_CLASS_DIR, idx, '.txt')
+
+        class_idx = self.SCENE_LABEL_LIST.index(class_str)
+
+        if self._scene_use_indoor_domestic_labels:
+            # map class to indoor domestic environment labels
+            mapping = self.SCENE_LABEL_IDX_TO_SCENE_LABEL_INDOOR_DOMESTIC_IDX
+            class_idx = mapping[class_idx]
+
+        return class_idx

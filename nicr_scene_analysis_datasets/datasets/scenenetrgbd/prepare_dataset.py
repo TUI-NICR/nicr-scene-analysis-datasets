@@ -28,7 +28,7 @@ except ImportError:
     raise
 
 
-# dict to convert WordNetIDs to NYUv2 classes
+# dict to convert WordNetIDs to NYUv2 classes (13 classes)
 # taken from https://github.com/jmccormac/pySceneNetRGBD/blob/master/convert_instance2class.py#L39
 WNID_TO_NYU = {'04593077': 4, '03262932': 4, '02933112': 6, '03207941': 7,
                '03063968': 10, '04398044': 7, '04515003': 7, '00017222': 7,
@@ -107,6 +107,14 @@ PROTOBUF_FILENAMES = {
 
 N_VIEWS_DEFAULT = 300
 
+SCENE_LOOKUP_DICT = {
+    sn.SceneLayout.BATHROOM: 'bathroom',
+    sn.SceneLayout.BEDROOM: 'bedroom',
+    sn.SceneLayout.KITCHEN: 'kitchen',
+    sn.SceneLayout.LIVING_ROOM: 'living_room',
+    sn.SceneLayout.OFFICE: 'office',
+}
+
 
 def _mapping_for_instances(instances):
     mapping = np.zeros(len(instances), dtype='uint8')
@@ -125,7 +133,7 @@ def main(args=None):
     # argument parser
     parser = ap.ArgumentParser(
         formatter_class=ap.ArgumentDefaultsHelpFormatter,
-        description='Prepare SceneNetRGBD dataset.'
+        description='Prepare SceneNet RGB-D dataset.'
     )
     parser.add_argument(
         'output_path',
@@ -177,14 +185,9 @@ def main(args=None):
     # process files
     # see: https://github.com/jmccormac/pySceneNetRGBD/blob/master/convert_instance2class.py
 
-    filelists = {s: {'rgb': [],
-                     'depth': [],
-                     'labels_13': []}
-                 for s in SceneNetRGBDMeta.SPLITS}
+    filelists = {s: [] for s in SceneNetRGBDMeta.SPLITS}
 
     for split in SceneNetRGBDMeta.SPLITS:
-        split_output_path = os.path.join(output_path, split)
-
         if split == 'train':
             n_random_views_to_include = args.n_random_views_to_include_train
         else:
@@ -196,6 +199,7 @@ def main(args=None):
                color='green')
 
         def _source_path(render_path, type_dir):
+            # rename val to valid
             split_ = 'val' if split == 'valid' else split
             return os.path.join(args.scenenetrgbd_filepath,
                                 split_,
@@ -239,9 +243,7 @@ def main(args=None):
 
             for traj in trajs.trajectories:
                 # process each trajectory
-                files_traj = {'rgb': [],
-                              'depth': [],
-                              'labels_13': []}
+                files_traj = []
                 traj_failed = False
 
                 # process views in trajectory
@@ -253,7 +255,7 @@ def main(args=None):
                     # get view
                     view = traj.views[i]
 
-                    # load label
+                    # load instance
                     s_fp = os.path.join(_source_path(traj.render_path,
                                                      INSTANCE_DIR),
                                         f'{view.frame_num}.png')
@@ -261,7 +263,7 @@ def main(args=None):
 
                     # map instances to classes
                     try:
-                        label_13 = mapping[instance]
+                        semantic_13 = mapping[instance]
                     except Exception:
                         # for some strange reason, for some view, we get an
                         # index error (instance id is greater than the
@@ -278,13 +280,13 @@ def main(args=None):
                         # continue
 
                         # print("Use fallback: map unknown instances to void")
-                        # label_13 = np.zeros_like(instance, dtype='uint8')
+                        # semantic_13 = np.zeros_like(instance, dtype='uint8')
                         # for inst, c in enumerate(mapping):
-                        #    label_13[instance == inst] = c
+                        #    semantic_13[instance == inst] = c
 
                     # check number of classes in view
                     if args.force_at_least_n_classes_in_view != -1:
-                        n = len(np.unique(label_13))
+                        n = len(np.unique(semantic_13))
                         if n < args.force_at_least_n_classes_in_view:
                             # process next view
                             cprint(f"View `{s_fp}` skipped ({n} < "
@@ -295,6 +297,9 @@ def main(args=None):
 
                     # view is fine, pick it
                     n_views_picked += 1
+                    files_traj.append(
+                        os.path.join(traj.render_path, f'{view.frame_num}')
+                    )
 
                     # copy rgb file
                     s_fp = os.path.join(_source_path(traj.render_path,
@@ -304,9 +309,6 @@ def main(args=None):
                                                      SceneNetRGBDMeta.RGB_DIR),
                                         f'{view.frame_num}.jpg')
                     shutil.copy(s_fp, d_fp)
-                    files_traj['rgb'].append(
-                        os.path.join(traj.render_path, f'{view.frame_num}.jpg')
-                    )
 
                     # copy depth file
                     s_fp = os.path.join(
@@ -319,22 +321,27 @@ def main(args=None):
                         f'{view.frame_num}.png'
                     )
                     shutil.copy(s_fp, d_fp)
-                    files_traj['depth'].append(
-                        os.path.join(traj.render_path, f'{view.frame_num}.png')
-                    )
 
-                    # save label
+                    # copy instance file
+                    s_fp = os.path.join(_source_path(traj.render_path,
+                                                     INSTANCE_DIR),
+                                        f'{view.frame_num}.png')
+                    d_fp = os.path.join(
+                        _output_path(traj.render_path,
+                                     SceneNetRGBDMeta.INSTANCES_DIR),
+                        f'{view.frame_num}.png'
+                    )
+                    shutil.copy(s_fp, d_fp)
+
+                    # save semantic
                     d_fp = os.path.join(
                         _output_path(traj.render_path,
                                      SceneNetRGBDMeta.SEMANTIC_13_DIR),
                         f'{view.frame_num}.png'
                     )
-                    cv2.imwrite(d_fp, label_13)
-                    files_traj['labels_13'].append(
-                        os.path.join(traj.render_path, f'{view.frame_num}.png')
-                    )
+                    cv2.imwrite(d_fp, semantic_13)
 
-                    # save colored label
+                    # save colored semantic
                     save_indexed_png(
                         os.path.join(
                             _output_path(
@@ -343,9 +350,19 @@ def main(args=None):
                             ),
                             f'{view.frame_num}.png'
                         ),
-                        label_13,
+                        semantic_13,
                         colormap=SceneNetRGBDMeta.SEMANTIC_LABEL_LIST.colors_array
                     )
+
+                    # save scene
+                    d_fp = os.path.join(
+                                _output_path(traj.render_path,
+                                             SceneNetRGBDMeta.SCENE_CLASS_DIR),
+                                f'{view.frame_num}.txt'
+                            )
+                    with open(d_fp, 'w') as f:
+                        scene_class = SCENE_LOOKUP_DICT[traj.layout.layout_type]
+                        f.write(f'{scene_class}')
 
                     if n_views_picked == n_views_to_pick:
                         # enough views processed
@@ -369,17 +386,19 @@ def main(args=None):
                         _output_path(traj.render_path,
                                      SceneNetRGBDMeta.SEMANTIC_13_DIR),
                         _output_path(traj.render_path,
-                                     SceneNetRGBDMeta.SEMANTIC_13_COLORED_DIR)
+                                     SceneNetRGBDMeta.SEMANTIC_13_COLORED_DIR),
+                        _output_path(traj.render_path,
+                                     SceneNetRGBDMeta.INSTANCES_DIR),
+                        _output_path(traj.render_path,
+                                     SceneNetRGBDMeta.SCENE_CLASS_DIR),
                     ]
                     for path in to_delete:
                         if os.path.exists(path):
                             shutil.rmtree(path)
                             cprint(f"Removing `{path}`", color='yellow')
                 else:
-                    # views are fine, extend filelists
-                    filelists[split]['rgb'].extend(files_traj['rgb'])
-                    filelists[split]['depth'].extend(files_traj['depth'])
-                    filelists[split]['labels_13'].extend(files_traj['labels_13'])
+                    # views are fine, extend filelist
+                    filelists[split].extend(files_traj)
 
                 if n_views_picked < n_views_to_pick:
                     cprint(f"Not enough views picked from trajectory "
@@ -407,19 +426,24 @@ def main(args=None):
         if n_views_missing > 0:
             cprint(f"{n_views_missing} views are missing.", color='yellow')
 
-    # ensure that filelists are valid and faultless
-    def get_identifier(filepath):
-        identifier = os.path.splitext(filepath)[0]
-        to_replace = os.path.dirname(os.path.dirname(os.path.dirname(identifier)))
-        return identifier.replace(to_replace, '')
-
-    n_samples = 0
-    for subset in SceneNetRGBDMeta.SPLITS:
-        identifier_lists = []
-        for filelist in filelists[subset].values():
-            identifier_lists.append([get_identifier(fp) for fp in filelist])
-
-        assert all(li == identifier_lists[0] for li in identifier_lists[1:])
+    # ensure that all files are present
+    subdirs = {
+        SceneNetRGBDMeta.RGB_DIR: '.jpg',
+        SceneNetRGBDMeta.DEPTH_DIR: '.png',
+        SceneNetRGBDMeta.SEMANTIC_13_DIR: '.png',
+        SceneNetRGBDMeta.SEMANTIC_13_COLORED_DIR: '.png',
+        SceneNetRGBDMeta.INSTANCES_DIR: '.png',
+        SceneNetRGBDMeta.SCENE_CLASS_DIR: '.txt',
+    }
+    for split in SceneNetRGBDMeta.SPLITS:
+        for f in filelists[split]:
+            for subdir, ext in subdirs.items():
+                assert os.path.exists(os.path.join(
+                    args.output_path,
+                    split,
+                    subdir,
+                    f'{f}{ext}'
+                ))
 
     # save meta files
     print("Writing meta files")
@@ -430,12 +454,10 @@ def main(args=None):
                SceneNetRGBDMeta.SEMANTIC_LABEL_LIST.colors_array,
                delimiter=',', fmt='%s')
 
-    for subset in SceneNetRGBDMeta.SPLITS:
-        subset_dict = filelists[subset]
-        for key, filelist in subset_dict.items():
-            np.savetxt(os.path.join(output_path, f'{subset}_{key}.txt'),
-                       filelist,
-                       delimiter=',', fmt='%s')
+    for split in SceneNetRGBDMeta.SPLITS:
+        np.savetxt(os.path.join(output_path, f'{split}.txt'),
+                   filelists[split],
+                   delimiter=',', fmt='%s')
 
 
 if __name__ == '__main__':
