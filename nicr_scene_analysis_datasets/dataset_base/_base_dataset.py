@@ -53,6 +53,7 @@ class DatasetBase(abc.ABC):
         # load creation meta
         if dataset_path is not None:
             self._creation_meta = load_creation_metafile(dataset_path)
+            warnings.warn("No creation meta file found.")
         else:
             self._creation_meta = None
 

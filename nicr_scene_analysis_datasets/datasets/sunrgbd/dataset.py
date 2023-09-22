@@ -15,7 +15,6 @@ import json
 
 from ...dataset_base import build_dataset_config
 from ...dataset_base import DatasetConfig
-from ...dataset_base import DepthStats
 from ...dataset_base import OrientationDict
 from ...dataset_base import RGBDDataset
 from ...dataset_base import SampleIdentifier

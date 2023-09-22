@@ -63,7 +63,7 @@ class SUNRGBDInstances:
 
         boxes_3d_coords = np.asarray(boxes_3d["coordinates"])
         height, width = semantic_label.shape[:2]
-        # If not box classes are found, there are no instance labels
+        # If no box classes are found, there are no instance labels
         if len(boxes_3d_coords) > 0:
             point_image = self.depth_img_to_point_image(depth_image,
                                                         intrinsics,
@@ -106,7 +106,7 @@ class SUNRGBDInstances:
     def depth_img_to_point_image(self, depth_image, intrinsics,
                                  extrinscis, scale=1000.0):
         """
-        This method converts a image with depth values to an image
+        This method converts an image with depth values to an image
         which contains global coordinates by using intrinsics and extrinscis.
         This is usefull cause then its possible to check if a point in
         the image is withhin a 3d bounding box
@@ -152,7 +152,7 @@ class SUNRGBDInstances:
     def do_instances_segmentation(height, width, boxes, boxes_classes,
                                   semantic_mat, point_mat, weak_mapping):
         '''
-        This method check for every point in a point image if it is
+        This method checks for every point in a point image if it is
         within a 3d bounding box.
         After that the box class gets compared to its semantic label.
         If both match we declare it as a instance.
@@ -230,8 +230,8 @@ class SUNRGBDInstances:
 
     def convert_boxes_3d(self, boxes_json):
         """
-        Sun RGBD stores boxes not in corner notation.
-        For easyier use we convert it.
+        SunRGBD stores boxes not in corner notation.
+        For easier use we convert it.
         """
         new_boxes_dict = {}
         new_boxes_dict["orientations"] = np.array(boxes_json["orientations"])
