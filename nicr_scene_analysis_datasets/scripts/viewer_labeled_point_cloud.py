@@ -121,6 +121,14 @@ def _parse_args():
              "visualization. This is useful to get smaller instance ids. "
     )
 
+    parser.add_argument(
+        '--max-z-value',
+        type=float,
+        default=float('inf'),
+        help="Maximum z value (height) to display. Useful for remove ceiling "
+             "in visualizations."
+    )
+
     # experimental
     parser.add_argument(
         '--second-pc-filepath',
@@ -201,12 +209,15 @@ def split_panoptic_labels(panoptic_labels,
     return semantic_labels, instance_labels
 
 
-def _load_ply(filepath,
-              semantic_cmap,
-              instance_cmap,
-              use_scannet_format=False,
-              use_panoptic_as_instance=False,
-              enumerate_instances=False):
+def _load_ply(
+    filepath,
+    semantic_cmap,
+    instance_cmap,
+    use_scannet_format=False,
+    use_panoptic_as_instance=False,
+    enumerate_instances=False,
+    max_z_value=None
+):
     plydata = plyfile.PlyData.read(filepath)
 
     num_verts = plydata['vertex'].count
@@ -215,8 +226,12 @@ def _load_ply(filepath,
     vertices[:, 1] = plydata['vertex'].data['y']
     vertices[:, 2] = plydata['vertex'].data['z']
 
-    pc = o3d.geometry.PointCloud()
+    # apply height filter (apply filter based on z value)
+    mask = vertices[:, 2] <= max_z_value
+    vertices = vertices[mask]
 
+    # create point cloud
+    pc = o3d.geometry.PointCloud()
     pc.points = o3d.utility.Vector3dVector(vertices)
 
     if 'red' in plydata['vertex']:
@@ -226,9 +241,11 @@ def _load_ply(filepath,
         colors[:, 2] = plydata['vertex'].data['blue']
     else:
         colors = np.ones(shape=[num_verts, 3], dtype=np.float32)
+    colors = colors[mask]
 
     if 'label' in plydata['vertex']:
         labels = plydata['vertex'].data['label']    # uint16 / uint32
+        labels = labels[mask]
 
         # split labels (panoptic / semantic-instance)
         semantic_labels, instance_labels = split_panoptic_labels(
@@ -277,7 +294,8 @@ def main():
         instance_cmap=instance_cmap,
         use_scannet_format=args.use_scannet_format,
         use_panoptic_as_instance=args.use_panoptic_labels_as_instance_labels,
-        enumerate_instances=args.enumerate_instances
+        enumerate_instances=args.enumerate_instances,
+        max_z_value=args.max_z_value
     )
     pc.colors = o3d.utility.Vector3dVector(labels[args.mode])
 

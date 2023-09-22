@@ -105,6 +105,10 @@ class ConcatDataset:
     def camera(self) -> Union[None, str]:
         return self._camera
 
+    @property
+    def datasets(self) -> Tuple[DatasetBase]:
+        return self._active_datasets
+
     def __getstate__(self):
         # important for copying
         return self.__dict__

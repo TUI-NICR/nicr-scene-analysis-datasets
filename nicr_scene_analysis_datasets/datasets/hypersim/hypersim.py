@@ -226,22 +226,60 @@ class HypersimMeta:
 
     # exclude scenes/camera trajectories that are probably detrimental to
     # training used in prepare_dataset
+    # note that we process all scenes in prepare_dataset, but listed scenes/
+    # camera trajectories below are excluded from split files, so you can go
+    # through to have a look
     BLACKLIST = {
-        'ai_003_001': 'cam_00',  # train
-        'ai_004_009': 'cam_01',  # train
-        'ai_013_001': '*',  # train (no depth)
-        'ai_015_006': '*',  # train
-        'ai_023_008': 'cam_01',  # train (no labels)
-        'ai_026_020': '*',  # train (no labels)
-        'ai_023_009': '*',  # train (no labels)
-        'ai_038_007': '*',  # train
-        'ai_023_004': 'cam_01',  # train (no labels)
-        'ai_023_006': '*',  # train (no labels)
-        'ai_026_013': '*',  # train (no labels)
-        'ai_026_018': '*',  # train (no labels)
-        # 'ai_044_004': 'cam_01',  # test (no labels)
+        # train (no rgb)
+        'ai_003_001': 'cam_00',
+
+        # train (no rgb)
+        'ai_004_009': 'cam_01',
+
+        # train ('other' -> some outdoor stuff with large columns, no useful
+        # rgb, depth, or labels)
+        'ai_013_001': '*',
+
+        # train (missing textures in rgb)
+        'ai_015_006': '*',
+
+        # train ('hall', no useful labels: only ceiling, cam_00 is also bad)
+        'ai_023_008': 'cam_01',
+
+        # train ('hallway', no useful labels: only wall/floor)
+        'ai_026_020': '*',
+
+        # train ('hall', no useful trajectories, no useful labels: only wall)
+        'ai_023_009': '*',
+
+        # train ('transit station', missing textures in rgb, no useful labels)
+        'ai_038_007': '*',
+
+        # train ('hall', no useful labels: only wall)
+        'ai_023_004': 'cam_01',
+
+        # train ('staircase', no labels: almost all pixels are void)
+        'ai_023_006': '*',
+
+        # train ('hall', no useful labels: most pixels are void, some wall/floor)
+        'ai_026_013': '*',
+
+        # train ('hall', no useful labels: most pixels are void, some floor)
+        'ai_026_018': '*',
+
+        # test ('hotel lobby', no useful labels: almost all pixels are void)
+        # as it is test, we do not exclude it
+        # 'ai_044_004': 'cam_01',
+
+        # train ('living room', missing textures in rgb)
         'ai_046_001': '*',  # train
-        # 'ai_046_009': '*',         # already excluded in csv
-        'ai_048_004': '*',  # train
-        'ai_053_005': '*'  # val
+
+        # already excluded in csv (not part of public release)
+        # 'ai_046_009': '*',
+
+        # train ('bedroom', rgb does not really looks realistic)
+        'ai_048_004': '*',
+
+        # valid ('lecture theater', missing textures in rgb)
+        'ai_053_005': '*'
     }

@@ -21,6 +21,8 @@ class NYUv2InstancesMatcher:
         # seem to contain the cropping parameters, so we estimated them with the
         # calc_crop function. Cropping parameters seemed to be constants, so
         # we hardcoded them.
+        # Note the cropping parameters derived are also hardcoded in the NYUv2
+        # toolbox: toolbox_nyu_depth_v2/get_projection_mask.m
         self.crop = (44, 40, 471, 601)
 
     def get_sunrgbd_path_for_nyuv2(self, split, folder):

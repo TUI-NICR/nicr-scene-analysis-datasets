@@ -7,8 +7,8 @@ import subprocess
 import warnings
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 5
-_VERSION_MICRO = 5
+_VERSION_MINOR = 6
+_VERSION_MICRO = 0
 
 
 def get_version(with_suffix=False):    # pragma no cover

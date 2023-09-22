@@ -34,6 +34,7 @@ class Hypersim(HypersimMeta, RGBDDataset):
         use_cache: bool = False,
         cameras: Optional[Tuple[str]] = None,
         depth_mode: str = 'raw',
+        orientations_use: bool = False,
         scene_use_indoor_domestic_labels: bool = False,
         **kwargs: Any
     ) -> None:
@@ -53,6 +54,7 @@ class Hypersim(HypersimMeta, RGBDDataset):
 
         self._split = split
         self._depth_mode = depth_mode
+        self._orientations_use = orientations_use
         self._scene_use_indoor_domestic_labels = scene_use_indoor_domestic_labels
 
         # cameras
@@ -226,6 +228,13 @@ class Hypersim(HypersimMeta, RGBDDataset):
         return instance.astype('int32')
 
     def _load_orientations(self, idx: int) -> Dict[int, float]:
+        # be aware that provided dataset orientations might not be consistent
+        # for instances within the same semantic class, thus, we disable
+        # instances by default
+        if not self._orientations_use:
+            return OrientationDict({})
+
+        # use orientations provided by the dataset
         fp = os.path.join(self._dataset_path,
                           self.split,
                           self.ORIENTATIONS_DIR,

@@ -14,7 +14,7 @@ Currently, this packages features the following datasets and annotations:
 | [NYUv2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)     | v030/v040      | RGB-D     | &#10003; | &#10003; | &#10003;\*\*\* | &#10003; | &#10003;           |          |            |            |
 | [ScanNet](http://www.scan-net.org/)                                   | v051/v051      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          | &#10003;   | &#10003;   |
 | [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet-rgbd.html)  | v054/v054      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          |            |            |
-| [SUNRGB-D](https://rgbd.cs.princeton.edu/)                            | v030/v040      | RGB-D     | &#10003; | &#10003; |   &#10003;     | &#10003; |                    | &#10003; | &#10003;   | &#10003;   |
+| [SUNRGB-D](https://rgbd.cs.princeton.edu/)                            | v060/v060      | RGB-D     | &#10003; | &#10003; |   &#10003;     | &#10003; |                    | &#10003; | &#10003;   | &#10003;   |
 
 \* Both depth and disparity are available.  
 \*\* Orientations are available but not consistent for instances within a semantic class (see Hypersim).  
@@ -28,13 +28,17 @@ The source code is published under Apache 2.0 license, see [license file](LICENS
 If you use the source code, please cite the paper related to your work:
 
 
-**PanopticNDT: Efficient and Robust Panoptic Mapping** (to be published):
+**PanopticNDT: Efficient and Robust Panoptic Mapping** (IEEE Xplore, arXiv):
 > Seichter, D., Stephan, B., Fischedick, S., Müller, S., Rabes, L., Gross, H.-M.
 *PanopticNDT: Efficient and Robust Panoptic Mapping*,
-submitted to IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2023.
+in IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2023.
 
 ```bibtex
-@inproceedings{tbd,
+@inproceedings{panopticndt2023iros,
+  title     = {{PanopticNDT: Efficient and Robust Panoptic Mapping}},
+  author    = {Seichter, Daniel and Stephan, Benedict and Fischedick, S{\"o}hnke Benedikt and  Mueller, Steffen and Rabes, Leonard and Gross, Horst-Michael},
+  booktitle = {IEEE/RSJ Int. Conf. on Intelligent Robots and Systems (IROS)},
+  year      = {2023}
 }
 ```
 
@@ -45,14 +49,12 @@ in IEEE International Joint Conference on Neural Networks (IJCNN), pp. 1-10, 202
 
 ```bibtex
 @inproceedings{emsaformer2023ijcnn,  
-  author={Fischedick, S{\"o}hnke and Seichter, Daniel and Schmidt, Robin and Rabes, Leonard and Gross, Horst-Michael},
-  booktitle={IEEE International Joint Conference on Neural Networks (IJCNN)}, 
-  title={{Efficient Multi-Task Scene Analysis with RGB-D Transformers}}, 
-  year={2023},
-  volume={},
-  number={},
-  pages={1-10},
-  doi={10.1109/IJCNN54540.2023.10191977}
+  title     = {{Efficient Multi-Task Scene Analysis with RGB-D Transformers}},
+  author    = {Fischedick, S{\"o}hnke and Seichter, Daniel and Schmidt, Robin and Rabes, Leonard and Gross, Horst-Michael},
+  booktitle = {IEEE International Joint Conference on Neural Networks (IJCNN)},
+  year      = {2023},
+  pages     = {1-10},
+  doi       = {10.1109/IJCNN54540.2023.10191977}
 }
 ```
 
@@ -63,14 +65,12 @@ in IEEE International Joint Conference on Neural Networks (IJCNN), pp. 1-10, 202
 
 ```bibtex
 @inproceedings{emsanet2022ijcnn,
-  title={Efficient Multi-Task RGB-D Scene Analysis for Indoor Environments},
-  author={Seichter, Daniel and Fischedick, S{\"o}hnke and K{\"o}hler, Mona and Gross, Horst-Michael},
-  booktitle={IEEE International Joint Conference on Neural Networks (IJCNN)},
-  year={2022},
-  volume={},
-  number={},
-  pages={1-10},
-  doi={10.1109/IJCNN55064.2022.9892852}
+  title     = {{Efficient Multi-Task RGB-D Scene Analysis for Indoor Environments}},
+  author    = {Seichter, Daniel and Fischedick, S{\"o}hnke and K{\"o}hler, Mona and Gross, Horst-Michael},
+  booktitle = {IEEE International Joint Conference on Neural Networks (IJCNN)},
+  year      = {2022},
+  pages     = {1-10},
+  doi       = {10.1109/IJCNN55064.2022.9892852}
 }
 ```
 
@@ -81,12 +81,12 @@ in IEEE International Conference on Robotics and Automation (ICRA), pp. 9221-922
 
 ```bibtex
 @inproceedings{semanticndtmapping2022icra,
-  author={Seichter, Daniel and Langer, Patrick and Wengefeld, Tim and Lewandowski, Benjamin and H{\"o}chemer, Dominik and Gross, Horst-Michael},
-  booktitle={2022 International Conference on Robotics and Automation (ICRA)},
-  title={Efficient and Robust Semantic Mapping for Indoor Environments},
-  year={2022},
-  pages={9221-9227},
-  doi={10.1109/ICRA46639.2022.9812205}
+  title     = {{Efficient and Robust Semantic Mapping for Indoor Environments}},
+  author    = {Seichter, Daniel and Langer, Patrick and Wengefeld, Tim and Lewandowski, Benjamin and H{\"o}chemer, Dominik and Gross, Horst-Michael},
+  booktitle = {2022 International Conference on Robotics and Automation (ICRA)},
+  year      = {2022},
+  pages     = {9221-9227},
+  doi       = {10.1109/ICRA46639.2022.9812205}
 }
 ```
 
@@ -97,11 +97,12 @@ in IEEE International Conference on Robotics and Automation (ICRA), pp. 13525-13
 
 ```bibtex
 @inproceedings{esanet2021icra,
-  title={Efficient RGB-D Semantic Segmentation for Indoor Scene Analysis},
-  author={Seichter, Daniel and K{\"o}hler, Mona and Lewandowski, Benjamin and Wengefeld, Tim and Gross, Horst-Michael},
-  booktitle={IEEE International Conference on Robotics and Automation (ICRA)},
-  year={2021},
-  pages={13525-13531}
+  title     = {{Efficient RGB-D Semantic Segmentation for Indoor Scene Analysis}},
+  author    = {Seichter, Daniel and K{\"o}hler, Mona and Lewandowski, Benjamin and Wengefeld, Tim and Gross, Horst-Michael},
+  booktitle = {IEEE International Conference on Robotics and Automation (ICRA)},
+  year      = {2021},
+  pages     = {13525-13531},
+  doi       = {10.1109/ICRA48506.2021.9561675}
 }
 ```
 
@@ -247,6 +248,37 @@ For further details, we refer to the usage in our [EMSANet repository](https://g
 The dataset can be used as an iterator (detectron2 usually does this) and can then be mapped with the custom mappers to generate the correct layout of the data.
 
 ## Changelog
+
+**Version 0.6.0 (Jun 13, 2023)**
+- SUNRGB-D:
+  - refactor and update instance creation from 3D boxes: annotations for
+    instances, boxes, and (instance) orientations have changed:
+    - ignore semantic stuff classes and void while matching boxes and point
+      clouds
+    - enhanced matching for similar classes (e.g., table <-> desk)
+    - resulting annotations feature a lot of more instances
+    - if you use the new instance annotations, please refer to this version of
+      the dataset as *SUNRGB-D (PanopticNDT version)* and to previous versions
+      with instance information as *SUNRGB-D (EMSANet version)*
+  - **note, version 0.6.0 is NOT compatible with previous versions, you will
+    get deviating results when applying EMSANet or EMSAFormer**
+- Hypersim:
+  - add more notes/comments for blacklisted scenes/camera trajectories
+  - do not use orientations by default (annotations provided by the dataset are
+    not consistent for instances within a semantic class), i.e., return an
+    empty OrientationDict for all samples unless `orientations_use` is enabled    
+- `nicr_sa_labeled_pc_viewer`: add `--max-z-value` argument to limit the
+  maximum z-value for the point cloud viewer
+- `nicr_sa_depth_viewer`: add `image_nonzero` mode for scaling depth values
+  (`--mode` argument)
+- `ConcatDataset`: add `datasets` property to get the list of currently active
+  datasets
+- MIRA readers:
+  - add instance meta stuff
+  - terminate MIRA in a softer way (do not send SIGKILL, send SIGINT instead
+    and wait before sending again) to force propper termination (and profile
+    creation)
+
 **Version 0.5.5 (Sep 08, 2023)**
 - make `creation_meta.json` optional to enable loading old datasets
 - some minor fixes (typos, ...)
