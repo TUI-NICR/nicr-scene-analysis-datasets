@@ -129,5 +129,11 @@ def create_or_update_creation_metafile(
 
 def load_creation_metafile(dataset_basepath: str) -> Dict[str, Any]:
     filepath = os.path.join(dataset_basepath, CREATION_META_FILENAME)
+
+    if not os.path.exists(filepath):
+        # file does not exist, dataset might be created before metafile was
+        # introduced, so do not raise an error here
+        return
+
     with open(filepath) as f:
         return json.load(f)

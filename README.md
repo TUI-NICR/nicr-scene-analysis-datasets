@@ -38,13 +38,21 @@ submitted to IEEE/RSJ International Conference on Intelligent Robots and Systems
 }
 ```
 
-**Efficient Multi-Task Scene Analysis with RGB-D Transformers** (to be published):
+**Efficient Multi-Task Scene Analysis with RGB-D Transformers** ([IEEE Xplore](https://ieeexplore.ieee.org/document/10191977), [arXiv](https://arxiv.org/abs/2306.05242)):
 > Fischedick, S., Seichter, D., Schmidt, R., Rabes, L., Gross, H.-M.
 *Efficient Multi-Task Scene Analysis with RGB-D Transformers*,
-submitted to IEEE International Joint Conference on Neural Networks (IJCNN), 2023.
+in IEEE International Joint Conference on Neural Networks (IJCNN), pp. 1-10, 2023.
 
 ```bibtex
-@inproceedings{tbd,
+@inproceedings{emsaformer2023ijcnn,  
+  author={Fischedick, S{\"o}hnke and Seichter, Daniel and Schmidt, Robin and Rabes, Leonard and Gross, Horst-Michael},
+  booktitle={IEEE International Joint Conference on Neural Networks (IJCNN)}, 
+  title={{Efficient Multi-Task Scene Analysis with RGB-D Transformers}}, 
+  year={2023},
+  volume={},
+  number={},
+  pages={1-10},
+  doi={10.1109/IJCNN54540.2023.10191977}
 }
 ```
 
@@ -78,7 +86,8 @@ in IEEE International Conference on Robotics and Automation (ICRA), pp. 9221-922
   title={Efficient and Robust Semantic Mapping for Indoor Environments},
   year={2022},
   pages={9221-9227},
-  doi={10.1109/ICRA46639.2022.9812205}}
+  doi={10.1109/ICRA46639.2022.9812205}
+}
 ```
 
 **Efficient RGB-D Semantic Segmentation for Indoor Scene Analysis** ([IEEE Xplore](https://ieeexplore.ieee.org/document/9561675),  [arXiv](https://arxiv.org/pdf/2011.06961.pdf)):
@@ -88,11 +97,11 @@ in IEEE International Conference on Robotics and Automation (ICRA), pp. 13525-13
 
 ```bibtex
 @inproceedings{esanet2021icra,
-title={Efficient RGB-D Semantic Segmentation for Indoor Scene Analysis},
-author={Seichter, Daniel and K{\"o}hler, Mona and Lewandowski, Benjamin and Wengefeld, Tim and Gross, Horst-Michael},
-booktitle={IEEE International Conference on Robotics and Automation (ICRA)},
-year={2021},
-pages={13525-13531}
+  title={Efficient RGB-D Semantic Segmentation for Indoor Scene Analysis},
+  author={Seichter, Daniel and K{\"o}hler, Mona and Lewandowski, Benjamin and Wengefeld, Tim and Gross, Horst-Michael},
+  booktitle={IEEE International Conference on Robotics and Automation (ICRA)},
+  year={2021},
+  pages={13525-13531}
 }
 ```
 
@@ -238,6 +247,10 @@ For further details, we refer to the usage in our [EMSANet repository](https://g
 The dataset can be used as an iterator (detectron2 usually does this) and can then be mapped with the custom mappers to generate the correct layout of the data.
 
 ## Changelog
+**Version 0.5.5 (Sep 08, 2023)**
+- make `creation_meta.json` optional to enable loading old datasets
+- some minor fixes (typos, ...)
+
 **Version 0.5.4 (Jun 07, 2023)**
 - SUNRGB-D:
   - fix for `depth_force_mm=True`:

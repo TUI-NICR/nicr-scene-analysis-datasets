@@ -10,9 +10,6 @@ import numpy as np
 import cv2
 import shutil
 
-from ..nyuv2.dataset import NYUv2
-from .dataset import SUNRGBD
-
 
 class NYUv2InstancesMatcher:
     def __init__(self, sunrgbd_path, nyuv2_path):
