@@ -38,8 +38,12 @@ stages:
           if [ "${PYTHON_VERSION_TO_USE}" == "3.6" ]; then
               conda install pytorch=1.10.1 torchvision=0.11.2 cpuonly -c pytorch
               python -m pip install detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cpu/torch1.10/index.html
-          else
+          elif [ "${PYTHON_VERSION_TO_USE}" == "3.8" ]; then
+              # EMSANet
               conda install pytorch=1.13.0 torchvision=0.14.0 cpuonly -c pytorch
+              python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
+          else
+              conda install pytorch=2.0.1 torchvision=0.15.2 cpuonly -c pytorch
               python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
           fi
 
@@ -85,11 +89,11 @@ style_check:
         # check style using pylint (without taking into account)
         - pylint ${CI_PROJECT_NAME//-/_} --rcfile=${CI_PROJECT_DIR}/.pylintrc || true
 
-tests_py36:    # ubuntu18
-    <<: *test_template
-    variables:
-        PYTHON_VERSION_TO_USE: "3.6"
-        REPORT_COVERAGE: "false"
+# tests_py36:    # ubuntu18
+#     <<: *test_template
+#     variables:
+#         PYTHON_VERSION_TO_USE: "3.6"
+#         REPORT_COVERAGE: "false"
 
 tests_py38:    # ubuntu20
     <<: *test_template
@@ -97,10 +101,16 @@ tests_py38:    # ubuntu20
         PYTHON_VERSION_TO_USE: "3.8"
         REPORT_COVERAGE: "true"
 
-tests_py310:    # current
+tests_py310:    # ubuntu22
     <<: *test_template
     variables:
         PYTHON_VERSION_TO_USE: "3.10"
+        REPORT_COVERAGE: "false"
+
+tests_py311:    # current
+    <<: *test_template
+    variables:
+        PYTHON_VERSION_TO_USE: "3.11"
         REPORT_COVERAGE: "false"
 
 update_pip_package:

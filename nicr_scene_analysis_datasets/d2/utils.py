@@ -103,7 +103,8 @@ class NICRSceneAnalysisDatasetMapper:
         segment_id_dict = {}
         for id in ids:
             instance_mask = instance == id
-            semantic_id = stats.mode(semantic[instance_mask]).mode[0]
+            semantic_id = stats.mode(semantic[instance_mask],
+                                     keepdims=False).mode
 
             if semantic_id == self.ignore_label:
                 continue

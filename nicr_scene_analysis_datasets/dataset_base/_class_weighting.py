@@ -114,7 +114,7 @@ def compute_class_weights(
     if len(nan_indices) != 0:
         print_(f"class_weights:\n{class_weights}")
         warnings.warn(
-            f"Classweights contain NaNs at positions: {nan_indices}, "
+            f"Class weights contain NaNs at positions: {nan_indices}, "
             "setting NaNs to 0."
         )
         print_(f"n_pixels_per_class:\n{n_pixels_per_class}")
