@@ -41,6 +41,7 @@ in IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2
   year      = {2023}
 }
 ```
+> Requires `nicr-scene-analysis-datasets` >= 0.6.0.
 
 **Efficient Multi-Task Scene Analysis with RGB-D Transformers** ([IEEE Xplore](https://ieeexplore.ieee.org/document/10191977), [arXiv](https://arxiv.org/abs/2306.05242)):
 > Fischedick, S., Seichter, D., Schmidt, R., Rabes, L., Gross, H.-M.
@@ -57,6 +58,8 @@ in IEEE International Joint Conference on Neural Networks (IJCNN), pp. 1-10, 202
   doi       = {10.1109/IJCNN54540.2023.10191977}
 }
 ```
+> Requires `nicr-scene-analysis-datasets` < 0.6.0 to reproduce SUNRGB-D results.
+
 
 **Efficient Multi-Task RGB-D Scene Analysis for Indoor Environments** ([IEEE Xplore](https://ieeexplore.ieee.org/document/9892852), [arXiv](https://arxiv.org/abs/2207.04526)):
 > Seichter, D., Fischedick, S., Köhler, M., Gross, H.-M.
@@ -73,6 +76,8 @@ in IEEE International Joint Conference on Neural Networks (IJCNN), pp. 1-10, 202
   doi       = {10.1109/IJCNN55064.2022.9892852}
 }
 ```
+> Requires `nicr-scene-analysis-datasets` < 0.6.0 to reproduce SUNRGB-D results.
+
 
 **Efficient and Robust Semantic Mapping for Indoor Environments** ([IEEE Xplore](https://ieeexplore.ieee.org/document/9812205), [arXiv](https://arxiv.org/pdf/2203.05836.pdf)):
 >Seichter, D., Langer, P., Wengefeld, T., Lewandowski, B., Höchemer, D., Gross, H.-M.
