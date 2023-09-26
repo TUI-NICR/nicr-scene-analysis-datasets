@@ -330,7 +330,7 @@ class SUNRGBDMeta:
         'Spiegel',
         'Bodenmatte',
         'Kleidung',
-        'Zimmerdecke',
+        'Raumdecke',     # before 'Zimmerdecke'
         'Bücher',
         'Kühlschrank',
         'Fernseher',

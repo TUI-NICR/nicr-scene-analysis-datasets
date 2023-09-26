@@ -181,7 +181,7 @@ class DatasetBase(abc.ABC):
         # call it to much
         idx = -1
         for i in range(len(self)):
-            if self._load_identifier(i) == identifier:
+            if self._load_identifier(i) == tuple(identifier):
                 if not ensure_single_match:
                     # first match is enough
                     return i

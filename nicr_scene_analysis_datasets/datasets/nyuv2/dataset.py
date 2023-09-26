@@ -168,12 +168,6 @@ class NYUv2(NYUv2Meta, RGBDDataset):
                           self.split,
                           self.SCENE_CLASS_DIR,
                           f'{self._filenames[idx]}.txt')
-        if not os.path.isfile(fp):
-            # catch common error
-            raise FileNotFoundError(
-                "Scene class file not found. Maybe the SUNRGBD matching was "
-                "not done yet."
-            )
         with open(fp, 'r') as f:
             class_str = f.readline()
 

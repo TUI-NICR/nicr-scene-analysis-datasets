@@ -8,13 +8,13 @@ Currently, this packages features the following datasets and annotations:
 
 | Dataset                                                               | Updated/Tested |   Type    | Semantic | Instance |  Orientations  |  Scene   |       Normal       | 3D Boxes | Extrinsics | Intrinsics |
 |:----------------------------------------------------------------------|:--------------:|:---------:|:--------:|:--------:|:--------------:|:--------:|:------------------:|:--------:|:----------:|:----------:|
-| [COCO](https://cocodataset.org/#home)                                 | v030/v040      | RGB       | &#10003; | &#10003; |                |          |                    |          |            |            |
-| [Cityscapes](https://www.cityscapes-dataset.com/)                     | v050/v050      | RGB-D\*   | &#10003; | &#10003; |                |          |                    |          |            |            |
-| [Hypersim](https://machinelearning.apple.com/research/hypersim)       | v052/v052      | RGB-D     | &#10003; | &#10003; | (&#10003;)\*\* | &#10003; | (&#10003;)\*\*\*\* | &#10003; | &#10003;   | &#10003;   |
-| [NYUv2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)     | v030/v040      | RGB-D     | &#10003; | &#10003; | &#10003;\*\*\* | &#10003; | &#10003;           |          |            |            |
-| [ScanNet](http://www.scan-net.org/)                                   | v051/v051      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          | &#10003;   | &#10003;   |
-| [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet-rgbd.html)  | v054/v054      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          |            |            |
-| [SUNRGB-D](https://rgbd.cs.princeton.edu/)                            | v030/v040      | RGB-D     | &#10003; | &#10003; |   &#10003;     | &#10003; |                    | &#10003; | &#10003;   | &#10003;   |
+| [COCO](https://cocodataset.org/#home)                                 | v030/v060      | RGB       | &#10003; | &#10003; |                |          |                    |          |            |            |
+| [Cityscapes](https://www.cityscapes-dataset.com/)                     | v050/v060      | RGB-D\*   | &#10003; | &#10003; |                |          |                    |          |            |            |
+| [Hypersim](https://machinelearning.apple.com/research/hypersim)       | v052/v060      | RGB-D     | &#10003; | &#10003; | (&#10003;)\*\* | &#10003; | (&#10003;)\*\*\*\* | &#10003; | &#10003;   | &#10003;   |
+| [NYUv2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)     | v030/v060      | RGB-D     | &#10003; | &#10003; | &#10003;\*\*\* | &#10003; | &#10003;           |          |            |            |
+| [ScanNet](http://www.scan-net.org/)                                   | v051/v060      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          | &#10003;   | &#10003;   |
+| [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet-rgbd.html)  | v054/v060      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          |            |            |
+| [SUNRGB-D](https://rgbd.cs.princeton.edu/)                            | v060/v060      | RGB-D     | &#10003; | &#10003; |   &#10003;     | &#10003; |                    | &#10003; | &#10003;   | &#10003;   |
 
 \* Both depth and disparity are available.  
 \*\* Orientations are available but not consistent for instances within a semantic class (see Hypersim).  
@@ -131,6 +131,7 @@ python -m pip install . [--user]
 Please follow the instructions given in the respective dataset folder to prepare the datasets.
 
 - [Cityscapes](nicr_scene_analysis_datasets/datasets/cityscapes)
+- [COCO](nicr_scene_analysis_datasets/datasets/coco)
 - [Hypersim](nicr_scene_analysis_datasets/datasets/hypersim)
 - [NYUv2](nicr_scene_analysis_datasets/datasets/nyuv2)
 - [ScanNet](nicr_scene_analysis_datasets/datasets/scannet)
@@ -148,7 +149,7 @@ We provide several command-line entry points for common tasks:
   - `nicr_sa_semantic_instance_viewer`: viewer for semantic and instance (and panoptic) annotations
   - `nicr_sa_labeled_pc_viewer`: viewer for labeled point clouds
 
-### How to use the dataset in our pipeline
+### How to use a dataset in a pipeline
 In the following, an example for Hypersim is given.
 
 First, specify the dataset path:
@@ -253,6 +254,36 @@ For further details, we refer to the usage in our [EMSANet repository](https://g
 The dataset can be used as an iterator (detectron2 usually does this) and can then be mapped with the custom mappers to generate the correct layout of the data.
 
 ## Changelog
+
+**Version 0.6.0 (Sep 26, 2023)**
+- SUNRGB-D:
+  - refactor and update instance creation from 3D boxes: annotations for
+    instances, boxes, and (instance) orientations have changed:
+    - ignore semantic stuff classes and void while matching boxes and point
+      clouds
+    - enhanced matching for similar classes (e.g., table <-> desk)
+    - resulting annotations feature a lot of more instances
+    - if you use the new instance annotations, please refer to this version of
+      the dataset as *SUNRGB-D (PanopticNDT version)* and to previous versions
+      with instance information as *SUNRGB-D (EMSANet version)*
+  - **note, version 0.6.0 is NOT compatible with previous versions, you will
+    get deviating results when applying EMSANet or EMSAFormer**
+- Hypersim:
+  - add more notes/comments for blacklisted scenes/camera trajectories
+  - do not use orientations by default (annotations provided by the dataset are
+    not consistent for instances within a semantic class), i.e., return an
+    empty OrientationDict for all samples unless `orientations_use` is enabled    
+- `nicr_sa_labeled_pc_viewer`: add `--max-z-value` argument to limit the
+  maximum z-value for the point cloud viewer
+- `nicr_sa_depth_viewer`: add `image_nonzero` mode for scaling depth values
+  (`--mode` argument)
+- MIRA readers:
+  - add instance meta stuff
+  - terminate MIRA in a softer way (do not send SIGKILL, send SIGINT instead
+    and wait before sending again) to force propper termination (and profile
+    creation)
+- some test fixes
+
 **Version 0.5.6 (Sep 26, 2023)**
 - `ConcatDataset`: 
   - add `datasets` property to get the list of currently active datasets

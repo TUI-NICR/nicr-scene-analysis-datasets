@@ -43,7 +43,7 @@ def compute_class_weights(
         )
         weight_mode = 'none'
 
-    print_(f"Computing class weights for '{sample_key}' ...")
+    print_(f"Computing '{weight_mode}' class weights for '{sample_key}' ...")
 
     if 'none' == weight_mode:
         # equal weights for all classes -> disables class weighting
