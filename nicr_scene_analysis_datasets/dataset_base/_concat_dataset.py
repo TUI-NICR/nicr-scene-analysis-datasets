@@ -80,7 +80,11 @@ class ConcatDataset:
     def __len__(self) -> int:
         return sum(len(ds) for ds in self._active_datasets)
 
-    def __getitem__(self, idx: int):
+    @property
+    def datasets(self) -> Tuple[DatasetBase]:
+        return self._active_datasets
+
+    def _determine_dataset_and_idx(self, idx: int) -> Tuple[DatasetBase, int]:
         length = len(self)
 
         # ensure that idx is in valid range
@@ -94,8 +98,18 @@ class ConcatDataset:
         # note that the lengths may change if filter_dataset is called outside
         for ds in self._active_datasets:
             if idx < len(ds):
-                return ds[idx]
+                return ds, idx
             idx -= len(ds)
+
+    def load(self, sample_key: str, idx: int) -> Any:
+        ds, ds_idx = self._determine_dataset_and_idx(idx)
+        return ds._sample_key_loaders.get(sample_key.lower())(ds_idx)
+
+    def __getitem__(self, idx: int):
+        # note, we also reimplement __getitem__ to do index mapping stuff only
+        # once per sample
+        ds, ds_idx = self._determine_dataset_and_idx(idx)
+        return ds[ds_idx]
 
     @property
     def cameras(self) -> Tuple[str]:

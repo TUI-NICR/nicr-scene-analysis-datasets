@@ -28,15 +28,20 @@ The source code is published under Apache 2.0 license, see [license file](LICENS
 If you use the source code, please cite the paper related to your work:
 
 
-**PanopticNDT: Efficient and Robust Panoptic Mapping** (to be published):
-> Seichter, D., Stephan, B., Fischedick, S., Müller, S., Rabes, L., Gross, H.-M.
+**PanopticNDT: Efficient and Robust Panoptic Mapping** (IEEE Xplore, [arXiv](https://arxiv.org/abs/2309.13635) (with appendix)):
+> Seichter, D., Stephan, B., Fischedick, S. B., Müller, S., Rabes, L., Gross, H.-M.
 *PanopticNDT: Efficient and Robust Panoptic Mapping*,
-submitted to IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2023.
+in IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2023.
 
 ```bibtex
-@inproceedings{tbd,
+@inproceedings{panopticndt2023iros,
+  title     = {{PanopticNDT: Efficient and Robust Panoptic Mapping}},
+  author    = {Seichter, Daniel and Stephan, Benedict and Fischedick, S{\"o}hnke Benedikt and  Mueller, Steffen and Rabes, Leonard and Gross, Horst-Michael},
+  booktitle = {IEEE/RSJ Int. Conf. on Intelligent Robots and Systems (IROS)},
+  year      = {2023}
 }
 ```
+> Requires `nicr-scene-analysis-datasets` >= 0.6.0.
 
 **Efficient Multi-Task Scene Analysis with RGB-D Transformers** ([IEEE Xplore](https://ieeexplore.ieee.org/document/10191977), [arXiv](https://arxiv.org/abs/2306.05242)):
 > Fischedick, S., Seichter, D., Schmidt, R., Rabes, L., Gross, H.-M.
@@ -45,16 +50,16 @@ in IEEE International Joint Conference on Neural Networks (IJCNN), pp. 1-10, 202
 
 ```bibtex
 @inproceedings{emsaformer2023ijcnn,  
-  author={Fischedick, S{\"o}hnke and Seichter, Daniel and Schmidt, Robin and Rabes, Leonard and Gross, Horst-Michael},
-  booktitle={IEEE International Joint Conference on Neural Networks (IJCNN)}, 
-  title={{Efficient Multi-Task Scene Analysis with RGB-D Transformers}}, 
-  year={2023},
-  volume={},
-  number={},
-  pages={1-10},
-  doi={10.1109/IJCNN54540.2023.10191977}
+  title     = {{Efficient Multi-Task Scene Analysis with RGB-D Transformers}},
+  author    = {Fischedick, S{\"o}hnke and Seichter, Daniel and Schmidt, Robin and Rabes, Leonard and Gross, Horst-Michael},
+  booktitle = {IEEE International Joint Conference on Neural Networks (IJCNN)},
+  year      = {2023},
+  pages     = {1-10},
+  doi       = {10.1109/IJCNN54540.2023.10191977}
 }
 ```
+> Requires `nicr-scene-analysis-datasets` < 0.6.0 to reproduce SUNRGB-D results.
+
 
 **Efficient Multi-Task RGB-D Scene Analysis for Indoor Environments** ([IEEE Xplore](https://ieeexplore.ieee.org/document/9892852), [arXiv](https://arxiv.org/abs/2207.04526)):
 > Seichter, D., Fischedick, S., Köhler, M., Gross, H.-M.
@@ -63,16 +68,16 @@ in IEEE International Joint Conference on Neural Networks (IJCNN), pp. 1-10, 202
 
 ```bibtex
 @inproceedings{emsanet2022ijcnn,
-  title={Efficient Multi-Task RGB-D Scene Analysis for Indoor Environments},
-  author={Seichter, Daniel and Fischedick, S{\"o}hnke and K{\"o}hler, Mona and Gross, Horst-Michael},
-  booktitle={IEEE International Joint Conference on Neural Networks (IJCNN)},
-  year={2022},
-  volume={},
-  number={},
-  pages={1-10},
-  doi={10.1109/IJCNN55064.2022.9892852}
+  title     = {{Efficient Multi-Task RGB-D Scene Analysis for Indoor Environments}},
+  author    = {Seichter, Daniel and Fischedick, S{\"o}hnke and K{\"o}hler, Mona and Gross, Horst-Michael},
+  booktitle = {IEEE International Joint Conference on Neural Networks (IJCNN)},
+  year      = {2022},
+  pages     = {1-10},
+  doi       = {10.1109/IJCNN55064.2022.9892852}
 }
 ```
+> Requires `nicr-scene-analysis-datasets` < 0.6.0 to reproduce SUNRGB-D results.
+
 
 **Efficient and Robust Semantic Mapping for Indoor Environments** ([IEEE Xplore](https://ieeexplore.ieee.org/document/9812205), [arXiv](https://arxiv.org/pdf/2203.05836.pdf)):
 >Seichter, D., Langer, P., Wengefeld, T., Lewandowski, B., Höchemer, D., Gross, H.-M.
@@ -81,12 +86,12 @@ in IEEE International Conference on Robotics and Automation (ICRA), pp. 9221-922
 
 ```bibtex
 @inproceedings{semanticndtmapping2022icra,
-  author={Seichter, Daniel and Langer, Patrick and Wengefeld, Tim and Lewandowski, Benjamin and H{\"o}chemer, Dominik and Gross, Horst-Michael},
-  booktitle={2022 International Conference on Robotics and Automation (ICRA)},
-  title={Efficient and Robust Semantic Mapping for Indoor Environments},
-  year={2022},
-  pages={9221-9227},
-  doi={10.1109/ICRA46639.2022.9812205}
+  title     = {{Efficient and Robust Semantic Mapping for Indoor Environments}},
+  author    = {Seichter, Daniel and Langer, Patrick and Wengefeld, Tim and Lewandowski, Benjamin and H{\"o}chemer, Dominik and Gross, Horst-Michael},
+  booktitle = {2022 International Conference on Robotics and Automation (ICRA)},
+  year      = {2022},
+  pages     = {9221-9227},
+  doi       = {10.1109/ICRA46639.2022.9812205}
 }
 ```
 
@@ -97,11 +102,12 @@ in IEEE International Conference on Robotics and Automation (ICRA), pp. 13525-13
 
 ```bibtex
 @inproceedings{esanet2021icra,
-  title={Efficient RGB-D Semantic Segmentation for Indoor Scene Analysis},
-  author={Seichter, Daniel and K{\"o}hler, Mona and Lewandowski, Benjamin and Wengefeld, Tim and Gross, Horst-Michael},
-  booktitle={IEEE International Conference on Robotics and Automation (ICRA)},
-  year={2021},
-  pages={13525-13531}
+  title     = {{Efficient RGB-D Semantic Segmentation for Indoor Scene Analysis}},
+  author    = {Seichter, Daniel and K{\"o}hler, Mona and Lewandowski, Benjamin and Wengefeld, Tim and Gross, Horst-Michael},
+  booktitle = {IEEE International Conference on Robotics and Automation (ICRA)},
+  year      = {2021},
+  pages     = {13525-13531},
+  doi       = {10.1109/ICRA48506.2021.9561675}
 }
 ```
 
@@ -247,6 +253,14 @@ For further details, we refer to the usage in our [EMSANet repository](https://g
 The dataset can be used as an iterator (detectron2 usually does this) and can then be mapped with the custom mappers to generate the correct layout of the data.
 
 ## Changelog
+**Version 0.5.6 (Sep 26, 2023)**
+- `ConcatDataset`: 
+  - add `datasets` property to get the list of currently active datasets
+  - implement `load` to load a specific sample key for a given index (e.g.,
+    `load('rgb', 0)` loads the rgb image of the main dataset at index 0)
+- update citations
+- tests: some fixes, skip testing with Python 3.6, add testing with Python 3.11
+
 **Version 0.5.5 (Sep 08, 2023)**
 - make `creation_meta.json` optional to enable loading old datasets
 - some minor fixes (typos, ...)
