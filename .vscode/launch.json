@@ -60,8 +60,8 @@
                 "--data-filepath", "/local/datasets/raw/sunrgbd/SUNRGBD.zip",
                 "--box-filepath", "/local/datasets/raw/sunrgbd/SUNRGBDMeta3DBB_v2.mat",
                 "--create-instances",
-                //"--copy-instances-from-nyuv2",
-                //"--nyuv2-path", "/datasets_nas/nicr_scene_analysis_datasets/version_054/nyuv2"
+                "--copy-instances-from-nyuv2",
+                "--nyuv2-path", "/datasets_nas/nicr_scene_analysis_datasets/version_060/nyuv2"
             ],
         },
     ]
