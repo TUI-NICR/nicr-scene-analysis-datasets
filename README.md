@@ -131,6 +131,7 @@ python -m pip install . [--user]
 Please follow the instructions given in the respective dataset folder to prepare the datasets.
 
 - [Cityscapes](nicr_scene_analysis_datasets/datasets/cityscapes)
+- [COCO](nicr_scene_analysis_datasets/datasets/coco)
 - [Hypersim](nicr_scene_analysis_datasets/datasets/hypersim)
 - [NYUv2](nicr_scene_analysis_datasets/datasets/nyuv2)
 - [ScanNet](nicr_scene_analysis_datasets/datasets/scannet)
@@ -148,7 +149,7 @@ We provide several command-line entry points for common tasks:
   - `nicr_sa_semantic_instance_viewer`: viewer for semantic and instance (and panoptic) annotations
   - `nicr_sa_labeled_pc_viewer`: viewer for labeled point clouds
 
-### How to use the dataset in our pipeline
+### How to use a dataset in a pipeline
 In the following, an example for Hypersim is given.
 
 First, specify the dataset path:
