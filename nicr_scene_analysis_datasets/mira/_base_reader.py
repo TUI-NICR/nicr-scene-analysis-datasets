@@ -4,6 +4,7 @@
 
 """
 import datetime
+import json
 import os
 import signal
 from time import time
@@ -86,8 +87,10 @@ class MIRAReaderBase(mirapy.Unit, AutoGetterSetter):
         self._ch_sem = None
         self._chs_sem_classes = []
         self._ch_ins_gt = None
+        self._ch_ins_gt_meta = None
         self._ch_ins_gt_ids = None
         self._ch_ins = None
+        self._ch_ins_meta = None
         self._ch_ins_ids = None
         self._ch_scene_gt = None
         self._ch_scene_gt_class = None
@@ -198,6 +201,7 @@ class MIRAReaderBase(mirapy.Unit, AutoGetterSetter):
             "Comma-separated list of identifier filters or empty for all "
             "scenes, e.g., 'ai_001_010,ai_003_007', 'ai_001_010/cam_02', "
             "'ai_001_010/cam_02/0000', or 'scene0707/00'",
+            ''
         )
 
         # predicted semantic ---------------------------------------------------
@@ -461,11 +465,13 @@ class MIRAReaderBase(mirapy.Unit, AutoGetterSetter):
 
         # instance
         self._ch_ins_gt = self.publish('InstanceGT', Img)
+        self._ch_ins_gt_meta = self.publish('InstanceGTMeta', str)
         self._ch_ins_gt_ids = self.publish('InstacneGTIds', Img)
 
         # predicted instance
         if self._load_predicted_instance:
             self._ch_ins = self.publish('Instance', Img)
+            self._ch_ins_meta = self.publish('InstanceMeta', str)
             self._ch_ins_ids = self.publish('InstanceIds', Img)
 
         # scene
@@ -614,7 +620,14 @@ class MIRAReaderBase(mirapy.Unit, AutoGetterSetter):
         # derive ids
         instance_ids = instance.astype('uint16')    # < 65535 classes
 
-        return instance, instance_ids
+        # instance meta
+        fp = os.path.join(self._predicted_instance_path.rstrip('/')+'_meta',
+                          *identifier)
+        with open(fp+'.json', 'r') as f:
+            # instance_meta = json.load(f)
+            instance_meta = f.read()
+
+        return instance, instance_ids, instance_meta
 
     def load_predicted_scene(self, identifier):
         fp = os.path.join(self._predicted_scene_path, *identifier)
@@ -627,6 +640,29 @@ class MIRAReaderBase(mirapy.Unit, AutoGetterSetter):
         scene_class = scene.astype('uint8')    # < 256 classes
 
         return scene, scene_class
+
+    def create_instance_meta_from_semantic_instance(self, semantic, instance):
+        # mimics the instance meta dict from EMSANet
+        meta = {}
+        for id_ in np.unique(instance):
+            if 0 == id_:
+                # no instance
+                continue
+            mask = instance == id_
+            # as bincount always starts with 0, the argmax will always return
+            # the class id of the most frequent class of the semantic labels
+            semantic_idx = np.bincount(semantic[mask]).argmax()
+            meta[str(id_)] = {
+                'area': int(np.sum(mask)),
+                'center_yx': (-1, -1),   # not required so far
+                'orientation': 0.0,    # not available
+                'panoptic_id': (int(semantic_idx) << 16) + int(id_),
+                'panoptic_score': 1.0,
+                'score': 1.0,
+                'semantic_idx': int(semantic_idx),
+                'semantic_score': 1.0,
+            }
+        return json.dumps(meta)
 
     # @abc.abstractmethod
     def process_sample(self, sample):
@@ -766,9 +802,11 @@ class MIRAReaderBase(mirapy.Unit, AutoGetterSetter):
 
         if 'instance_gt' in sample_mira:
             _post(self._ch_ins_gt, sample_mira['instance_gt'])
+            _post(self._ch_ins_gt_meta, sample_mira['instance_gt_meta'])
             _post(self._ch_ins_gt_ids, sample_mira['instance_gt_ids'])
         if self._load_predicted_instance:
             _post(self._ch_ins, sample_mira['instance'])
+            _post(self._ch_ins_meta, sample_mira['instance_meta'])
             _post(self._ch_ins_ids, sample_mira['instance_ids'])
 
         if 'scene_gt' in sample_mira:
@@ -795,7 +833,11 @@ class MIRAReaderBase(mirapy.Unit, AutoGetterSetter):
                                f"Killing MIRA in {time_left:.1f} second(s)")
                 else:
                     # kill MIRA
-                    os.kill(os.getpid(), signal.SIGKILL)
+                    # os.kill(os.getpid(), signal.SIGKILL)
+                    os.kill(os.getpid(), signal.SIGINT)
+                    # wait for termination, profile creation, ...
+                    # send SIGINT once again in 5 seconds
+                    self._kill_time = cur_time + 5
             return
 
         if self._paused:

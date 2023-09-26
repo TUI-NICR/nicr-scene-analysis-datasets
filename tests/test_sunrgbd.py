@@ -88,7 +88,7 @@ def test_dataset(split, depth_mode):
             # Assert that the encoding is in radians
             assert 0 <= value <= 2*np.pi
         # 3d boxes
-        assert isinstance(sample['3d_boxes'], dict)
+        assert isinstance(sample['3d_boxes'], list)
 
         if i >= 9:
             break

@@ -48,5 +48,21 @@
                 "--force-at-least-n-classes-in-view", "4",
             ],
         },
+        {
+            "name": "create sunrgbd v060",
+            "type": "python",
+            "request": "launch",
+            "module": "nicr_scene_analysis_datasets.datasets.sunrgbd.prepare_dataset",
+            "console": "integratedTerminal",
+            "args": [
+                "/local/datasets/sunrgbd_test",
+                "--toolbox-filepath", "/local/datasets/raw/sunrgbd/SUNRGBDtoolbox.zip",
+                "--data-filepath", "/local/datasets/raw/sunrgbd/SUNRGBD.zip",
+                "--box-filepath", "/local/datasets/raw/sunrgbd/SUNRGBDMeta3DBB_v2.mat",
+                "--create-instances",
+                //"--copy-instances-from-nyuv2",
+                //"--nyuv2-path", "/datasets_nas/nicr_scene_analysis_datasets/version_054/nyuv2"
+            ],
+        },
     ]
 }

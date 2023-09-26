@@ -51,7 +51,7 @@ def _parse_args():
     parser.add_argument(
         '-m', '--mode',
         type=str,
-        choices=('image', 'limits'),
+        choices=('image', 'image_nonzero', 'limits'),
         default='limits',
         help="Mode for scaling depth values before applying colormap."
     )
@@ -117,13 +117,16 @@ def _load_and_show(filepaths,
     img_raw = img.copy()
     img = img.astype(np.float32)
     img_min = img.min()
+    img_min_nonzero = img[img > 0].min()
     img_max = img.max()
     img_mean = img.mean()
     img_std = img.std()
 
     print(f"[{idx}/{len(filepaths)-1}] {os.path.basename(filepath)} "
           f"(WxH: {img.shape[1]}x{img.shape[0]}, "
-          f"Min: {img_min:0.2f}, Max: {img_max:0.2f}, Mean: {img_mean:0.2f}, "
+          f"Min: {img_min:0.2f}, Min (nonzero): {img_min_nonzero:0.2f}, "
+          f"Max: {img_max:0.2f}, "
+          f"Mean: {img_mean:0.2f}, "
           f"Std: {img_std:0.2f})")
 
     if img.ndim != 2:
@@ -135,6 +138,11 @@ def _load_and_show(filepaths,
         img /= max_depth - min_depth
         # ensure [0, 1] range
         img = np.clip(img, 0, 1)
+    elif 'image_nonzero' == scale_mode:
+        img -= img_min_nonzero
+        img /= img_max - img_min_nonzero
+        # ensure [0, 1] range
+        img = np.clip(img, 0, 1)    # set invalid pixels back to zero
     else:
         img -= img_min
         img /= img_max - img_min

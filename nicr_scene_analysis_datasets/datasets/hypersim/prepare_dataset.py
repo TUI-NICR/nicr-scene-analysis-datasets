@@ -98,13 +98,13 @@ def save_indexed_png(filepath, label, colormap):
     return save_indexed_png_(filepath, label, colormap)
 
 
-def save_pcd(filepath, pointcloud):
-    height, width = pointcloud.shape[:2]
+def save_pc(filepath, pc):
+    height, width = pc.shape[:2]
 
     file_extension = os.path.splitext(filepath)[1]
 
     if file_extension == '.npz':
-        np.savez_compressed(filepath, pointcloud)
+        np.savez_compressed(filepath, pc)
 
     elif file_extension == '.pcd':
 
@@ -122,10 +122,10 @@ def save_pcd(filepath, pointcloud):
             f.write('DATA ascii\n')
 
             # write point data
-            for point in pointcloud.reshape(-1, 3):
+            for point in pc.reshape(-1, 3):
                 f.write(f'{point[0]} {point[1]} {point[2]}\n')
     else:
-        raise ValueError('Filetype for pointcloud not understood')
+        raise ValueError('Filetype for point cloud not understood')
 
 
 def load_pc(scene_path, cam='cam_00', frame=0):
@@ -142,7 +142,7 @@ def load_pc(scene_path, cam='cam_00', frame=0):
 
     height, width = pc.shape[:2]
 
-    # load extrinsic as the pointcloud is given in world coordinate frame
+    # load extrinsic as the point cloud is given in world coordinate frame
     extrinsics = load_extrinsics(scene_path, cam, frame)
 
     rotation = Rotation.from_quat(
@@ -152,7 +152,7 @@ def load_pc(scene_path, cam='cam_00', frame=0):
     transform[:3, :3] = rotation.as_matrix()
     transform[:3, 3] = [extrinsics[t] for t in ['x', 'y', 'z']]
 
-    # flatten pointcloud for transformation
+    # flatten point cloud for transformation
     pc = pc.reshape(-1, 3)
 
     # change to homogenous coordinates
@@ -171,7 +171,7 @@ def compute_point_cloud(scene_path, cam, frame, camera_params):
     # code adapted from:
     # https://github.com/apple/ml-hypersim/blob/main/contrib/mikeroberts3000/jupyter/01_casting_rays_that_match_hypersim_images.ipynb
 
-    # note, we do not use the precomputed pointclouds as they are of type
+    # note, we do not use the precomputed point clouds as they are of type
     # float16 and, thus, not precise enough for our purposes
 
     # distance image (note its the distance along the ray, not the distance to
@@ -208,7 +208,7 @@ def compute_point_cloud(scene_path, cam, frame, camera_params):
     # rays = np.dot(M_cam_from_uv, uvs_2d.reshape(-1, 3).T).T
     rays = np.dot(uvs_2d.reshape(-1, 3), M_cam_from_uv.T)   # (h*w, 3)
 
-    # compute pointcloud
+    # compute point cloud
     normed_rays = rays / np.linalg.norm(rays, ord=2, axis=-1, keepdims=True)
     points_cam = normed_rays * distance_img_meters.reshape(-1, 1)   # (h*w, 3)
 
@@ -622,7 +622,7 @@ def process_one_sample(
                           if k not in ('a', 'b')}
         depth_intrinsics = intrinsics
 
-        # get pointcloud -------------------------------------------------------
+        # get point cloud ------------------------------------------------------
         # note, we do not use the precomputed point cloud as they is of type
         # float16 and, thus, not precise enough for our purposes (i.e,
         # introduces more artifacts in the back-projection)
@@ -633,7 +633,7 @@ def process_one_sample(
             camera_params=cp
         )
 
-        # get depth image as z coordinate from pointcloud ----------------------
+        # get depth image as z coordinate from point cloud ---------------------
         depth = points_cam[:, :, -1]    # use z as depth
         depth = depth * 1000    # convert to mm
         depth[depth > np.iinfo('uint16').max] = 0    # clip to 65.535m

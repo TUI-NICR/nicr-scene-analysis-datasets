@@ -3,6 +3,7 @@
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 """
 import numpy as np
+from packaging import version
 from scipy.spatial.transform import Rotation
 
 import mirapy
@@ -93,6 +94,8 @@ class HypersimReaderBase(MIRAReaderBase):
                 *self._sample_keys
             )
         )
+        v = version.parse(self._dataset.creation_meta['version'])
+        self._dataset_is_old_instance_format = v < version.parse('0.5.2')
 
     def process_sample(self, sample):
         sample_mira = {}
@@ -179,18 +182,37 @@ class HypersimReaderBase(MIRAReaderBase):
 
         # ground-truth instance segmentation -----------------------------------
         if 'instance' in sample:
+            if self._dataset_is_old_instance_format:
+                # if hypersim dataset is older than v0.5.2, instances are stored
+                # as uint16 but with swapped endianness, which results in quite
+                # large instance ids (if we load them with this dataset package
+                # version) that break our encoding scheme, e.g.,
+                #   float32(35072) + 0.999 = 35073
+                # vs.
+                #   float32(137) + 0.999 = 137.999
+                instance = sample['instance'].astype('uint16')  # back to uint16
+                instance.byteswap(True)  # swap endianness
+                sample['instance'] = instance.astype('uint32')  # back to uint32
+
             # we use a score of 0.999 for all pixels
             sample_mira['instance_gt'] = to_mira_img(
                 sample['instance'].astype('float32') + 0.999
             )
+            sample_mira['instance_gt_meta'] = \
+                self.create_instance_meta_from_semantic_instance(
+                    sample['semantic'], sample['instance']
+                )
             sample_mira['instance_gt_ids'] = to_mira_img(
                 sample['instance'].astype('uint16')    # < 65535 ids
             )
 
         # predicted instance segmentation --------------------------------------
         if self._load_predicted_instance:
-            ins, ins_ids = self.load_predicted_instance(sample['identifier'])
+            ins, ins_ids, ins_meta = self.load_predicted_instance(
+                sample['identifier']
+            )
             sample_mira['instance'] = to_mira_img(ins)
+            sample_mira['instance_meta'] = ins_meta
             sample_mira['instance_ids'] = to_mira_img(ins_ids)
 
         # ground-truth scene class ---------------------------------------------

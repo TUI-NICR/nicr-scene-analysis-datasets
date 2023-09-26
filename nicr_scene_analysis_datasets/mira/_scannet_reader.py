@@ -242,14 +242,21 @@ class ScanNetReaderBase(MIRAReaderBase):
             sample_mira['instance_gt'] = to_mira_img(
                 sample['instance'].astype('float32') + 0.999
             )
+            sample_mira['instance_gt_meta'] = \
+                self.create_instance_meta_from_semantic_instance(
+                    sample['semantic'], sample['instance']
+                )
             sample_mira['instance_gt_ids'] = to_mira_img(
                 sample['instance'].astype('uint16')    # < 65535 ids
             )
 
         # predicted instance segmentation --------------------------------------
         if self._load_predicted_instance:
-            ins, ins_ids = self.load_predicted_instance(sample['identifier'])
+            ins, ins_ids, ins_meta = self.load_predicted_instance(
+                sample['identifier']
+            )
             sample_mira['instance'] = to_mira_img(ins)
+            sample_mira['instance_meta'] = ins_meta
             sample_mira['instance_ids'] = to_mira_img(ins_ids)
 
         # ground-truth scene class ---------------------------------------------
