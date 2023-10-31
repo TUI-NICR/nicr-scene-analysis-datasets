@@ -17,7 +17,7 @@ Currently, this packages features the following datasets and annotations:
 | [SUNRGB-D](https://rgbd.cs.princeton.edu/)                            | v060/v060      | RGB-D     | &#10003; | &#10003; |   &#10003;     | &#10003; |                    | &#10003; | &#10003;   | &#10003;   |
 
 \* Both depth and disparity are available.  
-\*\* Orientations are available but not consistent for instances within a semantic class (see [Hypersim](https://machinelearning.apple.com/research/hypersim)).  
+\*\* Orientations are available but not consistent for instances within a semantic class (see [Hypersim](nicr_scene_analysis_datasets/datasets/hypersim)).  
 \*\*\* Annotated by hand in 3D for instances of some relevant semantic classes.  
 \*\*\*\* As of Nov 2022, [precomputed normals](https://cs.nyu.edu/~deigen/dnl/normals_gt.tgz) are not publicly available any longer. We are trying to reach the authors.
 
