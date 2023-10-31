@@ -10,14 +10,14 @@ Currently, this packages features the following datasets and annotations:
 |:----------------------------------------------------------------------|:--------------:|:---------:|:--------:|:--------:|:--------------:|:--------:|:------------------:|:--------:|:----------:|:----------:|
 | [COCO](https://cocodataset.org/#home)                                 | v030/v060      | RGB       | &#10003; | &#10003; |                |          |                    |          |            |            |
 | [Cityscapes](https://www.cityscapes-dataset.com/)                     | v050/v060      | RGB-D\*   | &#10003; | &#10003; |                |          |                    |          |            |            |
-| [Hypersim](https://machinelearning.apple.com/research/hypersim)       | v052/v060      | RGB-D     | &#10003; | &#10003; | (&#10003;)\*\* | &#10003; | (&#10003;)\*\*\*\* | &#10003; | &#10003;   | &#10003;   |
-| [NYUv2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)     | v030/v060      | RGB-D     | &#10003; | &#10003; | &#10003;\*\*\* | &#10003; | &#10003;           |          |            |            |
+| [Hypersim](https://machinelearning.apple.com/research/hypersim)       | v052/v060      | RGB-D     | &#10003; | &#10003; | (&#10003;)\*\* | &#10003; | &#10003;           | &#10003; | &#10003;   | &#10003;   |
+| [NYUv2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)     | v030/v060      | RGB-D     | &#10003; | &#10003; | &#10003;\*\*\* | &#10003; | (&#10003;)\*\*\*\* |          |            |            |
 | [ScanNet](http://www.scan-net.org/)                                   | v051/v060      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          | &#10003;   | &#10003;   |
 | [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet-rgbd.html)  | v054/v060      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          |            |            |
 | [SUNRGB-D](https://rgbd.cs.princeton.edu/)                            | v060/v060      | RGB-D     | &#10003; | &#10003; |   &#10003;     | &#10003; |                    | &#10003; | &#10003;   | &#10003;   |
 
 \* Both depth and disparity are available.  
-\*\* Orientations are available but not consistent for instances within a semantic class (see Hypersim).  
+\*\* Orientations are available but not consistent for instances within a semantic class (see [Hypersim](https://machinelearning.apple.com/research/hypersim)).  
 \*\*\* Annotated by hand in 3D for instances of some relevant semantic classes.  
 \*\*\*\* As of Nov 2022, [precomputed normals](https://cs.nyu.edu/~deigen/dnl/normals_gt.tgz) are not publicly available any longer. We are trying to reach the authors.
 
