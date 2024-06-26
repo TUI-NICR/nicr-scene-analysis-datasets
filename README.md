@@ -156,10 +156,10 @@ cd /path/to/this/repository
 # full installation:
 # - withpreparation: requirements for preparing the datasets
 # - with3d: requirements for 3D processing (see entry points below)
-python -m pip install .[withpreparation,with3d] [--user]
+python -m pip install -e "./[withpreparation,with3d]"
 
 # for usage only
-python -m pip install . [--user]
+python -m pip install -e "./"
 ```
 
 ## Prepare dataset
