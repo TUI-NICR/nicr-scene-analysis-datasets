@@ -3,11 +3,17 @@
 Some common dataset tests
 
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
+.. codeauthor:: Soehnke Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
 """
 import time
 
-from nicr_scene_analysis_datasets import NYUv2
+import numpy as np
+import pytest
+
+from nicr_scene_analysis_datasets import KNOWN_DATASETS
 from nicr_scene_analysis_datasets import SUNRGBD
+from nicr_scene_analysis_datasets import NYUv2
+from nicr_scene_analysis_datasets import get_dataset_class
 from nicr_scene_analysis_datasets.utils.testing import DATASET_PATH_DICT
 
 
@@ -102,3 +108,67 @@ def test_filter_camera_with_caching():
             shapes_cache[camera] = sample['rgb'].shape
 
     assert shapes_no_cache == shapes_cache
+
+
+@pytest.mark.parametrize('dataset_name', KNOWN_DATASETS)
+def test_datatypes(dataset_name):
+    # In this test case we check if the datatypes of the samples are correct
+    # for all datasets.
+
+    # Get the dataset class and prepare the arguments
+    dataset = get_dataset_class(dataset_name)
+    dataset_args = {
+        'dataset_path': DATASET_PATH_DICT[dataset_name],
+        'sample_keys': dataset.get_available_sample_keys('train'),
+        'use_cache': False
+    }
+
+    # Get the number of semantic classes.
+    semantic_n_classes = dataset.SEMANTIC_N_CLASSES
+    # Check if there are multiple semantic classes, as we want to test all
+    # of them.
+    has_multiple_semantic_classes = \
+        isinstance(semantic_n_classes, (list, tuple))
+    # If semantic_n_classes is not iterable, make it iterable, so we can
+    # we can use it in the for loop.
+    if not has_multiple_semantic_classes:
+        semantic_n_classes = (semantic_n_classes,)
+
+    for n_classes in semantic_n_classes:
+        if has_multiple_semantic_classes:
+            # If we have multiple semantic classes, we need to set the
+            # semantic_n_classes argument for each iteration.
+            dataset_args['semantic_n_classes'] = n_classes
+
+        # Create the dataset instance.
+        dataset_instance = dataset(**dataset_args)
+
+        for idx, sample in enumerate(dataset_instance):
+            if idx >= 9:
+                break
+
+            # Ensure that the rgb, depth, semantic and instance samples
+            # have the correct datatype.
+            rgb = sample['rgb']
+            assert rgb.dtype == np.uint8
+
+            # Not all datasets have depth
+            if 'depth' in sample:
+                depth = sample['depth']
+                # The Cityscapes dataset has float32 depth values, while
+                # all other datasets have uint16 depth values.
+                if dataset_name == 'cityscapes':
+                    assert depth.dtype == np.float32
+                else:
+                    assert depth.dtype == np.uint16
+
+            # If the number of semantic classes is less than 256, the
+            # semantic values should be uint8, otherwise uint16.
+            semantic = sample['semantic']
+            if n_classes <= 255:
+                assert semantic.dtype == np.uint8
+            else:
+                assert semantic.dtype == np.uint16
+
+            instance = sample['instance']
+            assert instance.dtype == np.uint16

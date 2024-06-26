@@ -13,6 +13,9 @@ from ..nyuv2.nyuv2 import NYUv2Meta
 
 
 class SUNRGBDMeta:
+    # see constructor in dataset.py for details
+    INSTANCE_VERSIONS = ('emsanet', 'panopticndt')
+
     SPLITS = ('train', 'test')
     SPLIT_FILELIST_FILENAMES = {SPLITS[0]: 'train.txt', SPLITS[1]: 'test.txt'}
 
@@ -61,7 +64,7 @@ class SUNRGBDMeta:
 
     CAMERAS = ('realsense', 'kv2', 'kv1', 'xtion')
 
-    IMAGE_DIR = 'rgb'
+    RGB_DIR = 'rgb'
     SEMANTIC_DIR = 'semantic'
     SEMANTIC_COLORED_DIR = 'semantic_colored'
     SEMANTIC_COLORED_DIR_SUN = 'semantic_colored_sunrgbd'
@@ -71,9 +74,21 @@ class SUNRGBDMeta:
     EXTRINSICS_DIR = 'extrinsics'
     INTRINSICS_DIR = 'intrinsics'
 
-    INSTANCES_DIR = 'instance'
-    ORIENTATIONS_DIR = 'orientations'
-    BOX_DIR = 'boxes'
+    # EMSANet version - see constructor in dataset.py for details
+    INSTANCES_EMSANET_DIR = 'instance_emsanet'
+    ORIENTATIONS_EMSANET_DIR = 'orientations_emsanet'
+    BOXES_EMSANET_DIR = 'boxes_emsanet'
+
+    # PanopticNDT version - see constructor in dataset.py for details
+    INSTANCES_PANOPTICNDT_DIR = 'instance_panopticndt'
+    ORIENTATIONS_PANOPTICNDT_DIR = 'orientations_panopticndt'
+    BOXES_PANOPTICNDT_DIR = 'boxes_panopticndt'
+
+    # legacy directories - not version is not specified (any old version)
+    INSTANCES_LEGACY_DIR = 'instance'
+    ORIENTATIONS_LEGACY_DIR = 'orientations'
+    BOXES_LEGACY_DIR = 'boxes'
+
     SCENE_CLASS_DIR = 'scene_class'
 
     # original SUNRGBD scene labels

@@ -395,27 +395,6 @@ def main(args=None):
             with open(scene_class_path, 'w') as f:
                 f.write(scene_types[idx])
 
-    # save meta files
-    print("Writing meta files")
-    np.savetxt(os.path.join(output_path, 'class_names_1+13.txt'),
-               NYUv2Meta.SEMANTIC_LABEL_LIST_13.class_names,
-               delimiter=',', fmt='%s')
-    np.savetxt(os.path.join(output_path, 'class_colors_1+13.txt'),
-               NYUv2Meta.SEMANTIC_LABEL_LIST_13.colors_array,
-               delimiter=',', fmt='%s')
-    np.savetxt(os.path.join(output_path, 'class_names_1+40.txt'),
-               NYUv2Meta.SEMANTIC_LABEL_LIST_40.class_names,
-               delimiter=',', fmt='%s')
-    np.savetxt(os.path.join(output_path, 'class_colors_1+40.txt'),
-               NYUv2Meta.SEMANTIC_LABEL_LIST_40.colors_array,
-               delimiter=',', fmt='%s')
-    np.savetxt(os.path.join(output_path, 'class_names_1+894.txt'),
-               NYUv2Meta.SEMANTIC_LABEL_LIST_894.class_names,
-               delimiter=',', fmt='%s')
-    np.savetxt(os.path.join(output_path, 'class_colors_1+894.txt'),
-               NYUv2Meta.SEMANTIC_LABEL_LIST_894.colors_array,
-               delimiter=',', fmt='%s')
-
     # splits
     np.savetxt(os.path.join(output_path,
                             NYUv2Meta.SPLIT_FILELIST_FILENAMES['train']),

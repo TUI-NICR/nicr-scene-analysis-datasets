@@ -27,7 +27,6 @@ class SceneNetRGBD(SceneNetRGBDMeta, RGBDDataset):
         use_cache: bool = False,
         cameras: Optional[Tuple[str]] = None,
         depth_mode: str = 'refined',
-        semantic_n_classes: int = 13,
         scene_use_indoor_domestic_labels: bool = False,
         **kwargs: Any
     ) -> None:
@@ -42,7 +41,7 @@ class SceneNetRGBD(SceneNetRGBDMeta, RGBDDataset):
         assert split in self.SPLITS
         assert depth_mode in self.DEPTH_MODES
         assert all(sk in self.get_available_sample_keys(split) for sk in sample_keys)
-        self._semantic_n_classes = semantic_n_classes
+        self._semantic_n_classes = 13
         self._split = split
         self._depth_mode = depth_mode
         self._cameras = self.CAMERAS
@@ -149,10 +148,10 @@ class SceneNetRGBD(SceneNetRGBDMeta, RGBDDataset):
         return SampleIdentifier(os.path.normpath(fn).split(os.sep))
 
     def _load_semantic(self, idx: int) -> np.ndarray:
-        return self._load(self.SEMANTIC_13_DIR, idx)
+        return self._load(self.SEMANTIC_13_DIR, idx).astype('uint8')
 
     def _load_instance(self, idx: int) -> np.ndarray:
-        return self._load(self.INSTANCES_DIR, idx).astype('int32')
+        return self._load(self.INSTANCES_DIR, idx).astype('uint16')
 
     def _load_scene(self, idx: int) -> int:
         class_str = self._load(self.SCENE_CLASS_DIR, idx, '.txt')

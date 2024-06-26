@@ -159,8 +159,8 @@ class COCO(COCOMeta, RGBDataset):
         return SampleIdentifier(os.path.normpath(filename).split(os.sep))
 
     def _load_semantic(self, idx: int) -> np.ndarray:
-        return self._load(self.SEMANTIC_DIR, idx)
+        return self._load(self.SEMANTIC_DIR, idx).astype('uint8')
 
     def _load_instance(self, idx: int) -> np.ndarray:
         instance = self._load(self.INSTANCES_DIR, idx)
-        return instance.astype('int32')
+        return instance.astype('uint16')

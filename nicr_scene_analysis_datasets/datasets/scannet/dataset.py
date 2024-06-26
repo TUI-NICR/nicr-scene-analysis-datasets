@@ -244,7 +244,7 @@ class ScanNet(ScanNetMeta, RGBDDataset):
     def _load_depth(self, idx: int) -> np.ndarray:
         # note that depth is not registered to RGB or any spatial annotation,
         # however, as the shift between both is minimal, simple resizing
-        # during preprocessing is fine, for more details, see_
+        # during preprocessing is fine, for more details, see:
         # https://github.com/ScanNet/ScanNet/issues/109
         return self._load(self.DEPTH_DIR, idx, '.png')
 
@@ -276,21 +276,29 @@ class ScanNet(ScanNetMeta, RGBDDataset):
         return SampleIdentifier(os.path.normpath(ident).split(os.sep))
 
     def _load_semantic(self, idx: int) -> np.ndarray:
-        return self._load(
+        semantic = self._load(
             self.SEMANTIC_DIR_FMT.format(self._instance_semantic_mode,
                                          self._semantic_n_classes),
             idx,
             '.png'
         )
+        if self._semantic_n_classes <= 255:
+            # convert to uint8
+            semantic = semantic.astype('uint8')
+        else:
+            # convert to uint16
+            semantic = semantic.astype('uint16')
+        return semantic
 
     def _load_instance(self, idx: int) -> np.ndarray:
         # max train: 132, max valid: 107
+        # instance images are using uint8
         instance = self._load(
             self.INSTANCES_DIR_FMT.format(self._instance_semantic_mode),
             idx,
             '.png'
         )
-        return instance.astype('int32')  # instance images are using uint8
+        return instance.astype('uint16')
 
     def _load_scene(self, idx: int) -> int:
         fp = os.path.join(self._dataset_path,

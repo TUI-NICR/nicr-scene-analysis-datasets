@@ -7,7 +7,7 @@ import subprocess
 import warnings
 
 _VERSION_MAJOR = 0
-_VERSION_MINOR = 6
+_VERSION_MINOR = 7
 _VERSION_MICRO = 0
 
 
@@ -19,6 +19,9 @@ def get_version(with_suffix=False):    # pragma no cover
                 cwd=os.path.abspath(os.path.dirname(__file__))
             )
             suffix = suffix.decode().strip()
+            # replace - with . to be PEP440 compliant,
+            # e.g., d2c4396-dirty -> d2c4396.dirty
+            suffix = suffix.replace('-', '.')
         except Exception:
             warnings.warn("Cannot determine version suffix using git.")
             suffix = ''

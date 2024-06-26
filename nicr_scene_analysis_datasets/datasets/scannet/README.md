@@ -30,12 +30,13 @@ Note: 3D meshes and surface reconstructions are not included in the preparation 
         [--label-map-file /path/to/scannet-labels.combined.tsv]
     ```
 
-With Arguments:
+With arguments:
 - `--n-processes`:
-  the number of worker processes to spawn.
+  The number of worker processes to spawn.
 - `--subsample`
-  the subsample that is exported to the output folder
+  The subsample that is exported to the output folder.
 - `--additional_subsamples`:
-  for additional subsampled versions of the dataset
+  Tor additional subsampled versions of the dataset.
 - `--label-map-file`:
-  path to scannet-labels.combined.tsv, if not specified assumed to be located in source dir
+  Path to scannet-labels.combined.tsv, if not specified assumed to be located 
+  in source dir.

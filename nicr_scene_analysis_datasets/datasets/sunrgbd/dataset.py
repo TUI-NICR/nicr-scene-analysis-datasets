@@ -30,6 +30,7 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
         self,
         *,
         dataset_path: Optional[str] = None,
+        instances_version: str = 'panopticndt',  # see notes below
         split: str = 'train',
         sample_keys: Tuple[str] = ('rgb', 'depth', 'semantic'),
         use_cache: bool = False,
@@ -47,6 +48,54 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
             use_cache=use_cache,
             **kwargs
         )
+
+        # we created two versions of SUNRGB-D with instance annotations
+        # extracted from existing 3d-box annotations:
+        # - 'emsanet': this initial version was created for training EMSANet
+        #   (efficient panoptic segmentation) - see IJCNN 2022 paper - and was
+        #   also used for EMSAFormer (efficient panoptic segmentation) - see
+        #   IJCNN 2023 paper
+        # - 'panopticndt': this revised version was created along with the work
+        #   for PanopticNDT (panoptic mapping) - see IROS 2023 paper, it
+        #   refines large parts of the instance extraction (see changelog for
+        #   v0.6.0 of this package)
+        # - 'anyold': this value can be used as workaround to load any dataset
+        #   prepared with a package version < v0.7.0 - use this value only if
+        #   you know what you are doing!
+        assert instances_version in (self.INSTANCE_VERSIONS + ('anyold',))
+        self._instances_version = instances_version
+
+        # try to load annotation version from creation meta, if not available
+        # use the passed value
+        if (
+            self.creation_meta is not None and
+            'additional_meta' in self.creation_meta
+        ):
+            self._instances_version_meta = \
+                self.creation_meta['additional_meta'].get(
+                    'instances_version',
+                    self._instances_version
+                )
+        else:
+            self._instances_version_meta = self._instances_version
+
+        # determine paths based on annotation version
+        if 'emsanet' == self._instances_version:
+            assert self._instances_version_meta == self._instances_version
+
+            self.INSTANCES_DIR = self.INSTANCES_EMSANET_DIR
+            self.ORIENTATIONS_DIR = self.ORIENTATIONS_EMSANET_DIR
+            self.BOXES_DIR = self.BOXES_EMSANET_DIR
+        elif 'panopticndt' == self._instances_version:
+            assert self._instances_version_meta == self._instances_version
+
+            self.INSTANCES_DIR = self.INSTANCES_PANOPTICNDT_DIR
+            self.ORIENTATIONS_DIR = self.ORIENTATIONS_PANOPTICNDT_DIR
+            self.BOXES_DIR = self.BOXES_PANOPTICNDT_DIR
+        elif 'anyold' == self._instances_version:
+            self.INSTANCES_DIR = self.INSTANCES_LEGACY_DIR
+            self.ORIENTATIONS_DIR = self.ORIENTATIONS_LEGACY_DIR
+            self.BOXES_DIR = self.BOXES_LEGACY_DIR
 
         assert split in self.SPLITS
         assert depth_mode in self.DEPTH_MODES
@@ -166,24 +215,37 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
                           f'{filename}{extension}')
 
         # load data
-        if '.json' == extension:
-            with open(fp, 'r') as f:
-                data = json.load(f)
-        elif '.txt' == extension:
-            with open(fp, 'r') as f:
-                data = f.readline()
-        else:
-            # default load using OpenCV
-            data = cv2.imread(fp, cv2.IMREAD_UNCHANGED)
-            if data is None:
-                raise IOError(f"Unable to load image: '{fp}'")
-            if data.ndim == 3:
-                data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
+        try:
+            if '.json' == extension:
+                with open(fp, 'r') as f:
+                    data = json.load(f)
+            elif '.txt' == extension:
+                with open(fp, 'r') as f:
+                    data = f.readline()
+            else:
+                # default load using OpenCV
+                data = cv2.imread(fp, cv2.IMREAD_UNCHANGED)
+                if data is None:
+                    raise IOError(f"Unable to load image: '{fp}'")
+                if data.ndim == 3:
+                    data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
+        except (FileNotFoundError, IOError) as e:
+            # handle common errors caused by changes introduced in v0.7.0
+            raise FileNotFoundError(
+                f"Cannot load file: '{fp}'. \n"
+                "It is likely that your are trying to load files from a "
+                "SUNRGB-D dataset prepared with another version of this "
+                "dataset package. We recommend re-preparing the SUNRGB-D "
+                "dataset with the current version of the dataset package. "
+                "Otherwise - and only if you know what you are doing - you "
+                "might consider the `instances_version` parameter of this "
+                "SUNRGB-D dataset class to force loading anyway."
+            ) from e
 
         return data
 
     def _load_rgb(self, idx: int) -> np.ndarray:
-        return self._load(self.IMAGE_DIR, idx, '.jpg')
+        return self._load(self.RGB_DIR, idx, '.jpg')
 
     def _load_rgb_intrinsics(
         self,
@@ -279,10 +341,10 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
         return SampleIdentifier(os.path.normpath(fn).split(os.sep))
 
     def _load_semantic(self, idx: int) -> np.ndarray:
-        return self._load(self.SEMANTIC_DIR, idx)
+        return self._load(self.SEMANTIC_DIR, idx).astype('uint8')
 
     def _load_instance(self, idx: int) -> np.ndarray:
-        return self._load(self.INSTANCES_DIR, idx).astype('int32')
+        return self._load(self.INSTANCES_DIR, idx).astype('uint16')
 
     def _load_orientations(self, idx: int) -> Dict[int, float]:
         orientations = self._load(self.ORIENTATIONS_DIR, idx, '.json')
@@ -290,7 +352,7 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
         return OrientationDict(orientations)
 
     def _load_3d_boxes(self, idx: int) -> Dict[str, Any]:
-        return self._load(self.BOX_DIR, idx, '.json')
+        return self._load(self.BOXES_DIR, idx, '.json')
 
     def _load_scene(self, idx: int) -> int:
         class_str = self._load(self.SCENE_CLASS_DIR, idx, '.txt')

@@ -22,7 +22,6 @@ def test_dataset(split):
         split=split,
         sample_keys=SceneNetRGBD.get_available_sample_keys(split),
         depth_mode='refined',
-        semantic_n_classes=N_CLASSES_WITH_VOID - 1
     )
 
     assert dataset.depth_mode == 'refined'

@@ -177,7 +177,10 @@ class Cityscapes(CityscapesMeta, RGBDDataset):
         return SampleIdentifier(os.path.normpath(fn).split(os.sep))
 
     def _load_semantic(self, idx: int) -> np.ndarray:
-        return self._load(self._semantic_dir, self._files['semantic'][idx])
+        return self._load(
+            self._semantic_dir,
+            self._files['semantic'][idx]
+        ).astype('uint8')
 
     def _load_instance(self, idx: int) -> np.ndarray:
         # notes:
@@ -195,4 +198,4 @@ class Cityscapes(CityscapesMeta, RGBDDataset):
         #   inst = inst[inst > t]  # arbitrary t: 23 <= t < 24000
         #   return inst
         return self._load(self.INSTANCE_DIR,
-                          self._files['instance'][idx]).astype('int32')
+                          self._files['instance'][idx]).astype('uint16')

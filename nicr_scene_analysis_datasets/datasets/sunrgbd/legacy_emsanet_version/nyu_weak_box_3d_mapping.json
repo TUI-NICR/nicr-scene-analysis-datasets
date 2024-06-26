@@ -1,0 +1,11 @@
+{
+    "books": ["bookshelf"],
+    "shower curtain": ["curtain"],
+
+    "counter": ["sink"],
+    "shelves": ["bookshelf", "cabinet"],
+    "floor mat": ["otherprop"],
+    "ceiling": ["otherstructure"],
+    "paper": ["box"],
+    "bag": ["bag"]
+}
