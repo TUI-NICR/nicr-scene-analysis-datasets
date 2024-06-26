@@ -274,9 +274,7 @@ def _load_ply(
         'ply_semantic': semantic_colors.astype('float64') / 255
     }
 
-    pc.colors = o3d.utility.Vector3dVector(colors)
-
-    return pc, labels
+    return pc, labels, mask
 
 
 def main():
@@ -288,7 +286,7 @@ def main():
     instance_cmap = get_colormap(args.instance_colormap)
 
     # load ply file
-    pc, labels = _load_ply(
+    pc, labels, valid_points_mask = _load_ply(
         filepath=args.filepath,
         semantic_cmap=semantic_cmap,
         instance_cmap=instance_cmap,
@@ -314,6 +312,10 @@ def main():
     if args.semantic_label_filepath is not None:
         semantic_labels = np.loadtxt(args.semantic_label_filepath,
                                      dtype=np.uint64)
+
+        assert len(semantic_labels) == len(valid_points_mask)
+        semantic_labels = semantic_labels[valid_points_mask]
+
         assert len(semantic_labels) == len(np.array(pc.points))
 
         labels['additional_semantic'] = semantic_cmap[semantic_labels] / 255
@@ -321,6 +323,10 @@ def main():
     if args.instance_label_filepath is not None:
         instance_labels = np.loadtxt(args.instance_label_filepath,
                                      dtype=np.uint64)
+
+        assert len(instance_labels) == len(valid_points_mask)
+        instance_labels = instance_labels[valid_points_mask]
+
         assert len(instance_labels) == len(np.array(pc.points))
 
         labels['additional_instance'] = _get_instance_colors(
@@ -332,6 +338,10 @@ def main():
     if args.panoptic_label_filepath is not None:
         panoptic_labels = np.loadtxt(args.panoptic_label_filepath,
                                      dtype=np.uint64)
+
+        assert len(panoptic_labels) == len(panoptic_labels)
+        panoptic_labels = panoptic_labels[valid_points_mask]
+
         assert len(panoptic_labels) == len(np.array(pc.points))
 
         semantic_labels, instance_labels = split_panoptic_labels(

@@ -203,7 +203,10 @@ class Hypersim(HypersimMeta, RGBDDataset):
         return ExtrinsicCameraParametersNormalized(extrinsics)
 
     def _load_semantic(self, idx: int) -> np.ndarray:
-        return self._load(self.SEMANTIC_DIR, f'{self._filenames[idx]}.png')
+        return self._load(
+            self.SEMANTIC_DIR,
+            f'{self._filenames[idx]}.png'
+        ).astype('uint8')
 
     def _load_instance(self, idx: int) -> np.ndarray:
         # Notes:
@@ -225,7 +228,7 @@ class Hypersim(HypersimMeta, RGBDDataset):
         instance = im[:, :, 1].astype('uint16') << 8
         instance += im[:, :, 2].astype('uint16')
 
-        return instance.astype('int32')
+        return instance.astype('uint16')
 
     def _load_orientations(self, idx: int) -> Dict[int, float]:
         # be aware that provided dataset orientations might not be consistent

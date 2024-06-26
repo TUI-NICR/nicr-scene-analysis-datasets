@@ -99,7 +99,10 @@ class DatasetBase(abc.ABC):
     def creation_meta(self) -> Union[None, Dict]:
         # we may have multiple entries in the meta file, so we take the last
         # one, see create_or_update_creation_metafile()
-        return self._creation_meta[-1]
+        if self._creation_meta is not None:
+            return self._creation_meta[-1]
+
+        return None
 
     @property
     def use_cache(self) -> bool:

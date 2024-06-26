@@ -14,7 +14,7 @@ Currently, this packages features the following datasets and annotations:
 | [NYUv2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)     | v030/v060      | RGB-D     | &#10003; | &#10003; | &#10003;\*\*\* | &#10003; | (&#10003;)\*\*\*\* |          |            |            |
 | [ScanNet](http://www.scan-net.org/)                                   | v051/v060      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          | &#10003;   | &#10003;   |
 | [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet-rgbd.html)  | v054/v060      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          |            |            |
-| [SUNRGB-D](https://rgbd.cs.princeton.edu/)                            | v060/v060      | RGB-D     | &#10003; | &#10003; |   &#10003;     | &#10003; |                    | &#10003; | &#10003;   | &#10003;   |
+| [SUNRGB-D](https://rgbd.cs.princeton.edu/)                            | v060/v070      | RGB-D     | &#10003; | &#10003; |   &#10003;     | &#10003; |                    | &#10003; | &#10003;   | &#10003;   |
 
 \* Both depth and disparity are available.  
 \*\* Orientations are available but not consistent for instances within a semantic class (see [Hypersim](nicr_scene_analysis_datasets/datasets/hypersim)).  
@@ -27,11 +27,15 @@ The source code is published under Apache 2.0 license, see [license file](LICENS
 
 If you use the source code, please cite the paper related to your work:
 
+---
 
-**PanopticNDT: Efficient and Robust Panoptic Mapping** (IEEE Xplore, [arXiv](https://arxiv.org/abs/2309.13635) (with appendix)):
+**PanopticNDT: Efficient and Robust Panoptic Mapping** ([IEEE Xplore](https://ieeexplore.ieee.org/document/10342137), [arXiv](https://arxiv.org/abs/2309.13635) (with appendix and some minor fixes)):
 > Seichter, D., Stephan, B., Fischedick, S. B., Müller, S., Rabes, L., Gross, H.-M.
 *PanopticNDT: Efficient and Robust Panoptic Mapping*,
 in IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2023.
+
+<details>
+<summary>BibTeX</summary>
 
 ```bibtex
 @inproceedings{panopticndt2023iros,
@@ -41,15 +45,21 @@ in IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2
   year      = {2023}
 }
 ```
-> Requires `nicr-scene-analysis-datasets` >= 0.6.0.
+
+</details>
+
+---
 
 **Efficient Multi-Task Scene Analysis with RGB-D Transformers** ([IEEE Xplore](https://ieeexplore.ieee.org/document/10191977), [arXiv](https://arxiv.org/abs/2306.05242)):
 > Fischedick, S., Seichter, D., Schmidt, R., Rabes, L., Gross, H.-M.
 *Efficient Multi-Task Scene Analysis with RGB-D Transformers*,
 in IEEE International Joint Conference on Neural Networks (IJCNN), pp. 1-10, 2023.
 
+<details>
+<summary>BibTeX</summary>
+
 ```bibtex
-@inproceedings{emsaformer2023ijcnn,  
+@inproceedings{emsaformer2023ijcnn,
   title     = {{Efficient Multi-Task Scene Analysis with RGB-D Transformers}},
   author    = {Fischedick, S{\"o}hnke and Seichter, Daniel and Schmidt, Robin and Rabes, Leonard and Gross, Horst-Michael},
   booktitle = {IEEE International Joint Conference on Neural Networks (IJCNN)},
@@ -58,13 +68,20 @@ in IEEE International Joint Conference on Neural Networks (IJCNN), pp. 1-10, 202
   doi       = {10.1109/IJCNN54540.2023.10191977}
 }
 ```
-> Requires `nicr-scene-analysis-datasets` < 0.6.0 to reproduce SUNRGB-D results.
 
+</details>
+
+> Use `--instances-version emsanet` when preparing the SUNRGB-D dataset with `nicr-scene-analysis-datasets` to reproduce reported results.
+
+---
 
 **Efficient Multi-Task RGB-D Scene Analysis for Indoor Environments** ([IEEE Xplore](https://ieeexplore.ieee.org/document/9892852), [arXiv](https://arxiv.org/abs/2207.04526)):
 > Seichter, D., Fischedick, S., Köhler, M., Gross, H.-M.
 *Efficient Multi-Task RGB-D Scene Analysis for Indoor Environments*,
 in IEEE International Joint Conference on Neural Networks (IJCNN), pp. 1-10, 2022.
+
+<details>
+<summary>BibTeX</summary>
 
 ```bibtex
 @inproceedings{emsanet2022ijcnn,
@@ -76,13 +93,20 @@ in IEEE International Joint Conference on Neural Networks (IJCNN), pp. 1-10, 202
   doi       = {10.1109/IJCNN55064.2022.9892852}
 }
 ```
-> Requires `nicr-scene-analysis-datasets` < 0.6.0 to reproduce SUNRGB-D results.
 
+</details>
+
+> Use `--instances-version emsanet` when preparing the SUNRGB-D dataset with `nicr-scene-analysis-datasets` to reproduce reported results.
+
+---
 
 **Efficient and Robust Semantic Mapping for Indoor Environments** ([IEEE Xplore](https://ieeexplore.ieee.org/document/9812205), [arXiv](https://arxiv.org/pdf/2203.05836.pdf)):
 >Seichter, D., Langer, P., Wengefeld, T., Lewandowski, B., Höchemer, D., Gross, H.-M.
 *Efficient and Robust Semantic Mapping for Indoor Environments*
 in IEEE International Conference on Robotics and Automation (ICRA), pp. 9221-9227, 2022.
+
+<details>
+<summary>BibTeX</summary>
 
 ```bibtex
 @inproceedings{semanticndtmapping2022icra,
@@ -95,10 +119,17 @@ in IEEE International Conference on Robotics and Automation (ICRA), pp. 9221-922
 }
 ```
 
+</details>
+
+---
+
 **Efficient RGB-D Semantic Segmentation for Indoor Scene Analysis** ([IEEE Xplore](https://ieeexplore.ieee.org/document/9561675),  [arXiv](https://arxiv.org/pdf/2011.06961.pdf)):
 >Seichter, D., Köhler, M., Lewandowski, B., Wengefeld T., Gross, H.-M.
 *Efficient RGB-D Semantic Segmentation for Indoor Scene Analysis*
 in IEEE International Conference on Robotics and Automation (ICRA), pp. 13525-13531, 2021.
+
+<details>
+<summary>BibTeX</summary>
 
 ```bibtex
 @inproceedings{esanet2021icra,
@@ -110,6 +141,11 @@ in IEEE International Conference on Robotics and Automation (ICRA), pp. 13525-13
   doi       = {10.1109/ICRA48506.2021.9561675}
 }
 ```
+
+</details>
+
+---
+
 
 ## Installation
 
@@ -255,6 +291,26 @@ The dataset can be used as an iterator (detectron2 usually does this) and can th
 
 ## Changelog
 
+**Version 0.7.0 (Jun 26, 2024)**
+- allow extracting both instance annotation versions for SUNRGB-D with a 
+  single version of the dataset package: 'emsanet' and 'panopticndt', use 
+  'emsanet' to reproduce results reported in EMSANet or EMSAFormer paper, and 
+  'panopticndt' for follow-up papers.
+- fix for missing creation meta files 
+
+**Version 0.6.1 (Dec 5, 2023)**
+- force 'instance' sample key to always be of dtype uint16
+- force 'semantic' sample key to always be of dtype uint8 (i.e., for Cityscapes, 
+  COCO, Hypersim, NYUv2 (13+40 classes), ScanNet (20, 40, 200), SceneNet RGB-D 
+  and SUNRGB-D) or uint16 (i.e., for NYUv2 (894 classes), ScanNet (549 classes))
+- add test to verify the dtypes of each dataset
+- remove 'semantic_n_classes' argument from SceneNet RGB-D and set it to '13'
+- fix version format and parsing to be PEP440 compliant (required for more 
+  recent packaging versions)
+- fix `--max-z-value` in `nicr_sa_labeled_pc_viewer` to work with additionally 
+  given label files (`*-label-filepath`) as well
+- this version was an internal release only
+
 **Version 0.6.0 (Sep 26, 2023)**
 - SUNRGB-D:
   - refactor and update instance creation from 3D boxes: annotations for
@@ -272,7 +328,7 @@ The dataset can be used as an iterator (detectron2 usually does this) and can th
   - add more notes/comments for blacklisted scenes/camera trajectories
   - do not use orientations by default (annotations provided by the dataset are
     not consistent for instances within a semantic class), i.e., return an
-    empty OrientationDict for all samples unless `orientations_use` is enabled    
+    empty OrientationDict for all samples unless `orientations_use` is enabled
 - `nicr_sa_labeled_pc_viewer`: add `--max-z-value` argument to limit the
   maximum z-value for the point cloud viewer
 - `nicr_sa_depth_viewer`: add `image_nonzero` mode for scaling depth values
@@ -285,7 +341,7 @@ The dataset can be used as an iterator (detectron2 usually does this) and can th
 - some test fixes
 
 **Version 0.5.6 (Sep 26, 2023)**
-- `ConcatDataset`: 
+- `ConcatDataset`:
   - add `datasets` property to get the list of currently active datasets
   - implement `load` to load a specific sample key for a given index (e.g.,
     `load('rgb', 0)` loads the rgb image of the main dataset at index 0)

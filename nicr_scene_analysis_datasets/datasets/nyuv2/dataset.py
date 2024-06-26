@@ -140,14 +140,21 @@ class NYUv2(NYUv2Meta, RGBDDataset):
         return SampleIdentifier((self._filenames[idx],))
 
     def _load_semantic(self, idx: int) -> np.ndarray:
-        return self._load(
+        semantic = self._load(
             self.SEMANTIC_DIR_FMT.format(self._semantic_n_classes),
             self._filenames[idx]
         )
+        if self._semantic_n_classes <= 255:
+            # convert to uint8
+            semantic = semantic.astype('uint8')
+        else:
+            # convert to uint16
+            semantic = semantic.astype('uint16')
+        return semantic
 
     def _load_instance(self, idx: int) -> np.ndarray:
         instance = self._load(self.INSTANCES_DIR, self._filenames[idx])
-        return instance.astype('int32')
+        return instance.astype('uint16')
 
     def _load_orientations(self, idx: int) -> Dict[int, float]:
         fp = os.path.join(self._dataset_path,

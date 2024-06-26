@@ -10,8 +10,8 @@ import numpy as np
 import cv2
 import shutil
 
-from ..nyuv2.nyuv2 import NYUv2Meta
-from .sunrgbd import SUNRGBDMeta
+from ...nyuv2.nyuv2 import NYUv2Meta
+from ..sunrgbd import SUNRGBDMeta
 
 
 class NYUv2InstancesMatcher:
@@ -78,7 +78,7 @@ class NYUv2InstancesMatcher:
 
             sun_instance_dir = self.get_sunrgbd_path_for_nyuv2(
                 split,
-                SUNRGBDMeta.INSTANCES_PANOPTICNDT_DIR
+                SUNRGBDMeta.INSTANCES_EMSANET_DIR
             )
             sun_instances = sorted(os.listdir(sun_instance_dir))
 
@@ -90,7 +90,7 @@ class NYUv2InstancesMatcher:
 
             sun_orientation_dir = self.get_sunrgbd_path_for_nyuv2(
                 split,
-                SUNRGBDMeta.ORIENTATIONS_PANOPTICNDT_DIR
+                SUNRGBDMeta.ORIENTATIONS_EMSANET_DIR
             )
             sun_orientations = sorted(os.listdir(sun_orientation_dir))
 

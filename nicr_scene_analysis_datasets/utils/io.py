@@ -120,11 +120,21 @@ def create_or_update_creation_metafile(
         'timestamp': int(ts),
         'local_time': datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S'),
         'user': getpass.getuser(),
-        'version': '{}.{}.{}-{}'.format(*get_version(with_suffix=True)),
+        'version': '{}.{}.{}+{}'.format(*get_version(with_suffix=True)),
         'additional_meta': additional_meta or None
     })
     with open(filepath, 'w') as f:
         json.dump(meta, f, indent=4)
+
+
+def _normalize_version(version: str) -> str:
+    # ensure PEP 440 compliant version
+    # older versions might use:
+    # (1)   1.2.3-a2c4e6-dirty -> 1.2.3+a2c4e6.dirty
+    # (2)   1.2.3- -> 1.2.3
+    version = version.strip('-')  # (2)
+    version = version.replace('-', '+', 1).replace('-', '.')  # (1)
+    return version
 
 
 def load_creation_metafile(dataset_basepath: str) -> Dict[str, Any]:
@@ -136,4 +146,10 @@ def load_creation_metafile(dataset_basepath: str) -> Dict[str, Any]:
         return
 
     with open(filepath) as f:
-        return json.load(f)
+        metas = json.load(f)
+
+    # ensure PEP 440 compliant version, we messed it up in the past
+    for meta in metas:
+        meta['version'] = _normalize_version(meta['version'])
+
+    return metas

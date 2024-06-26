@@ -75,11 +75,11 @@ the door frame and the door.
         [--n-processes N]
     ```
 
-With Arguments:
+With arguments:
 - `--additional_subsamples`:
-  for additional subsampled versions of the dataset
+  For additional subsampled versions of the dataset.
 - `--n-processes`:
-  number of worker processes to spawn
+  Number of worker processes to spawn.
 - `--no-tilt-shift-conversion`:
-  disable projecting the data/annotations back to a standard camera ignoring the 
-  tilt-shift parameters (use this to create dataset compatible with < v050)
+  Disable projecting the data/annotations back to a standard camera ignoring the 
+  tilt-shift parameters (use this to create dataset compatible with < v050).

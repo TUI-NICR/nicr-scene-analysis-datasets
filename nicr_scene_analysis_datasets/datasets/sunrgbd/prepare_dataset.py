@@ -527,24 +527,38 @@ def main(args=None):
     parser.add_argument(
         '--toolbox-filepath',
         default=None,
-        help="Filepath to SUNRGBD toolbox file."
+        help="Filepath to SUNRGB-D toolbox file."
     )
     parser.add_argument(
         '--data-filepath',
         default=None,
-        help="Filepath to SUNRGBD data zip file."
+        help="Filepath to SUNRGB-D data zip file."
     )
     parser.add_argument(
         '--box-filepath',
         default=None,
-        help="Filepath to SUNRGBD 3d bounding boxes."
+        help="Filepath to SUNRGB-D 3d bounding boxes."
     )
     parser.add_argument(
         '--create-instances',
         default=False,
         action="store_true",
         help="Whether the instance masks should be created by matching "
-             "3d boxes with the point cloud."
+             "3d boxes with point clouds."
+    )
+    parser.add_argument(
+        '--instances-version',
+        type=str,
+        default='panopticndt',
+        choices=SUNRGBDMeta.INSTANCE_VERSIONS,
+        help="Version of instance annotations to extract. Over time, we have "
+             "created two versions of SUNRGB-D with instance annotations "
+             "extracted from annotated 3d boxes: 'emsanet': this initial "
+             "version was created for training the original EMSANet - see "
+             "IJCNN 2022 paper; 'panopticndt': referes to a revised version "
+             "that was created along with the work for PanopticNDT - see "
+             "IROS 2023 paper, it refines large parts of the instance "
+             "extraction (see changelog for v0.6.0 of this package)."
     )
     parser.add_argument(
         '--copy-instances-from-nyuv2',
@@ -560,7 +574,18 @@ def main(args=None):
         help="Path to NYUv2 dataset for matching."
     )
 
-    args = parser.parse_args(args)
+    args_ = parser.parse_args(args)
+
+    # version switch
+    if 'emsanet' == args_.instances_version:
+        # switch to (legacy) emsanet instances version
+
+        from .legacy_emsanet_version.prepare_dataset import main as main_legacy
+
+        return main_legacy(args)
+    else:
+        # continue with this file/version
+        args = args_
 
     # output path
     output_path = os.path.expanduser(args.output_path)
@@ -571,7 +596,10 @@ def main(args=None):
     create_dir(tmp_path)
 
     # update or write metafile
-    create_or_update_creation_metafile(output_path)
+    create_or_update_creation_metafile(
+        output_path,
+        additional_meta={'instances_version': args.instances_version, }
+    )
 
     # download and extract data
     # toolbox
@@ -676,7 +704,7 @@ def main(args=None):
         # RGB image ------------------------------------------------------------
         rgb_path_tmp = os.path.join(data_path, sample_path, 'image',
                                     meta.rgbname)
-        rgb_path = os.path.join(output_path, split_dir, SUNRGBDMeta.IMAGE_DIR,
+        rgb_path = os.path.join(output_path, split_dir, SUNRGBDMeta.RGB_DIR,
                                 cam_path, f'{i:05d}.jpg')
         create_dir(os.path.dirname(rgb_path))
         os.replace(rgb_path_tmp, rgb_path)
@@ -778,7 +806,8 @@ def main(args=None):
 
         # 3D boxes and orientations -------------------------------------------
         boxes_3d_path = os.path.join(output_path, split_dir,
-                                     SUNRGBDMeta.BOX_DIR, cam_path,
+                                     SUNRGBDMeta.BOXES_PANOPTICNDT_DIR,
+                                     cam_path,
                                      f'{i:05d}.json')
         create_dir(os.path.dirname(boxes_3d_path))
 
@@ -836,7 +865,7 @@ def main(args=None):
         if args.create_instances:
             instance_path = os.path.join(output_path,
                                          split_dir,
-                                         SUNRGBDMeta.INSTANCES_DIR,
+                                         SUNRGBDMeta.INSTANCES_PANOPTICNDT_DIR,
                                          cam_path,
                                          f'{i:05d}.png')
 
@@ -879,9 +908,11 @@ def main(args=None):
 
         # Orientations --------------------------------------------------------
         if args.create_instances or instance_img is not None:
-            orientations_path = os.path.join(output_path, split_dir,
-                                             SUNRGBDMeta.ORIENTATIONS_DIR,
-                                             cam_path, f'{i:05d}.json')
+            orientations_path = os.path.join(
+                output_path, split_dir,
+                SUNRGBDMeta.ORIENTATIONS_PANOPTICNDT_DIR,
+                cam_path, f'{i:05d}.json'
+            )
             create_dir(os.path.dirname(orientations_path))
 
             # compute orientations
