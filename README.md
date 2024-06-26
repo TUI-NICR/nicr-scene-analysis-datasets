@@ -295,8 +295,10 @@ The dataset can be used as an iterator (detectron2 usually does this) and can th
 - allow extracting both instance annotation versions for SUNRGB-D with a 
   single version of the dataset package: 'emsanet' and 'panopticndt', use 
   'emsanet' to reproduce results reported in EMSANet or EMSAFormer paper, and 
-  'panopticndt' for follow-up papers.
+  'panopticndt' for follow-up papers
 - fix for missing creation meta files 
+- NYUv2: do not create outdated `class_names_*.txt` and `class_colors_*.txt`
+  files anymore
 
 **Version 0.6.1 (Dec 5, 2023)**
 - force 'instance' sample key to always be of dtype uint16
