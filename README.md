@@ -8,12 +8,12 @@ Currently, this packages features the following datasets and annotations:
 
 | Dataset                                                               | Updated/Tested |   Type    | Semantic | Instance |  Orientations  |  Scene   |       Normal       | 3D Boxes | Extrinsics | Intrinsics |
 |:----------------------------------------------------------------------|:--------------:|:---------:|:--------:|:--------:|:--------------:|:--------:|:------------------:|:--------:|:----------:|:----------:|
-| [COCO](https://cocodataset.org/#home)                                 | v030/v060      | RGB       | &#10003; | &#10003; |                |          |                    |          |            |            |
-| [Cityscapes](https://www.cityscapes-dataset.com/)                     | v050/v060      | RGB-D\*   | &#10003; | &#10003; |                |          |                    |          |            |            |
-| [Hypersim](https://machinelearning.apple.com/research/hypersim)       | v052/v060      | RGB-D     | &#10003; | &#10003; | (&#10003;)\*\* | &#10003; | &#10003;           | &#10003; | &#10003;   | &#10003;   |
-| [NYUv2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)     | v030/v060      | RGB-D     | &#10003; | &#10003; | &#10003;\*\*\* | &#10003; | (&#10003;)\*\*\*\* |          |            |            |
-| [ScanNet](http://www.scan-net.org/)                                   | v051/v060      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          | &#10003;   | &#10003;   |
-| [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet-rgbd.html)  | v054/v060      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          |            |            |
+| [COCO](https://cocodataset.org/#home)                                 | v030/v070      | RGB       | &#10003; | &#10003; |                |          |                    |          |            |            |
+| [Cityscapes](https://www.cityscapes-dataset.com/)                     | v050/v070      | RGB-D\*   | &#10003; | &#10003; |                |          |                    |          |            |            |
+| [Hypersim](https://machinelearning.apple.com/research/hypersim)       | v052/v070      | RGB-D     | &#10003; | &#10003; | (&#10003;)\*\* | &#10003; | &#10003;           | &#10003; | &#10003;   | &#10003;   |
+| [NYUv2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)     | v070/v070      | RGB-D     | &#10003; | &#10003; | &#10003;\*\*\* | &#10003; | (&#10003;)\*\*\*\* |          |            |            |
+| [ScanNet](http://www.scan-net.org/)                                   | v051/v070      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          | &#10003;   | &#10003;   |
+| [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet-rgbd.html)  | v054/v070      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          |            |            |
 | [SUNRGB-D](https://rgbd.cs.princeton.edu/)                            | v060/v070      | RGB-D     | &#10003; | &#10003; |   &#10003;     | &#10003; |                    | &#10003; | &#10003;   | &#10003;   |
 
 \* Both depth and disparity are available.  
