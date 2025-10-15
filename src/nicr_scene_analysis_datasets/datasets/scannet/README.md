@@ -37,7 +37,7 @@ Note: 3D meshes and surface reconstructions are not included in the preparation 
     - `--additional_subsamples`:
       Tor additional subsampled versions of the dataset.
     - `--label-map-file`:
-      Path to scannet-labels.combined.tsv, if not specified assumed to be located 
+      Path to scannet-labels.combined.tsv, if not specified assumed to be located
       in source dir.
 
 
@@ -46,7 +46,7 @@ Note: 3D meshes and surface reconstructions are not included in the preparation 
   > ```bash
   > pip install -e .[withauxiliarydata]
   > ```
-  
+
     ```bash
     # for auxiliary data such as synthetic depth and rgb/panoptic embeddings
     nicr_sa_generate_auxiliary_data \

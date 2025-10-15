@@ -90,4 +90,3 @@ There are two main versions of the dataset which are currently supported in this
       Embedding estimator(s) to use. Use `alpha_clip__l14-336-grit-20m` to match DVEFormer.
     - `--cache-models`:
       Cache models locally to avoid reloading them in future runs.
-

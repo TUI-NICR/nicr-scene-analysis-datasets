@@ -5,8 +5,8 @@ It contains 1449 densely labeled pairs of aligned RGB and depth images.
 
 For more details, see: [NYU Depth Dataset V2](https://cs.nyu.edu/~fergus/datasets/nyu_depth_v2.html)
 
-> As of Nov 2022, [precomputed normals](https://cs.nyu.edu/~deigen/dnl/normals_gt.tgz) are not publicly available any longer. 
-  We are trying to reach the authors. 
+> As of Nov 2022, [precomputed normals](https://cs.nyu.edu/~deigen/dnl/normals_gt.tgz) are not publicly available any longer.
+  We are trying to reach the authors.
   Normal extraction is optional for now.
 
 ## Prepare dataset
@@ -55,4 +55,3 @@ For more details, see: [NYU Depth Dataset V2](https://cs.nyu.edu/~fergus/dataset
     Embedding estimator(s) to use. Use `alpha_clip__l14-336-grit-20m` to match DVEFormer.
   - `--cache-models`:
     Cache models locally to avoid reloading them in future runs.
-

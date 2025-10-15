@@ -9,7 +9,7 @@ For more details, see: [Cityscapes Dataset](https://www.cityscapes-dataset.com/)
 
 1. Download and unzip dataset files:
     Use `csDownload` or download the files mentioned below manually from: [Cityscapes Dataset Downloads](https://www.cityscapes-dataset.com/downloads/)
-    
+
     ```bash
     CITYSCAPES_DOWNLOAD_DIR="/path/where/to/store/cityscapes_downloads"
 

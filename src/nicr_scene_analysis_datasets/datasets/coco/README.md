@@ -19,7 +19,7 @@ For more details, see: [COCO dataset](https://cocodataset.org/#home)
     > ```bash
     > pip install -e .[withauxiliarydata]
     > ```
-  
+
     ```bash
     # for auxiliary data such as synthetic depth and rgb/panoptic embeddings
     nicr_sa_generate_auxiliary_data \
