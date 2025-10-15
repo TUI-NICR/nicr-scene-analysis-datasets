@@ -21,14 +21,13 @@ from scipy.spatial.transform import Rotation as R
 from tqdm import tqdm
 
 from ....utils.img import save_indexed_png
-from ....utils.io import download_file
 from ....utils.io import create_dir
 from ....utils.io import create_or_update_creation_metafile
+from ....utils.io import download_file
 from ....utils.io import extract_zip
+from ..sunrgbd import SUNRGBDMeta
 from . import prepare_instances
 from .match_nyuv2_instances import NYUv2InstancesMatcher
-from ..sunrgbd import SUNRGBDMeta
-
 
 # see: http://rgbd.cs.princeton.edu/ in section Data and Annotation
 DATASET_URL = 'http://rgbd.cs.princeton.edu/data/SUNRGBD.zip'

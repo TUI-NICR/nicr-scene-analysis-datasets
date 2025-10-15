@@ -6,8 +6,8 @@
 import dataclasses
 from typing import Union
 
-from ._annotation import SemanticLabelList
 from ._annotation import SceneLabelList
+from ._annotation import SemanticLabelList
 from ._meta import DepthStats
 
 

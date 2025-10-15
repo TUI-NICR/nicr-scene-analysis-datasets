@@ -59,16 +59,12 @@ class NYUv2(NYUv2Meta, RGBDDataset):
 
         # load file list
         if dataset_path is not None:
-            dataset_path = os.path.expanduser(dataset_path)
-            assert os.path.exists(dataset_path), dataset_path
-            self._dataset_path = dataset_path
-
             # load filenames
-            fp = os.path.join(self._dataset_path,
+            fp = os.path.join(self.dataset_path,
                               self.SPLIT_FILELIST_FILENAMES[self._split])
             self._filenames = np.loadtxt(fp, dtype=str)
-        elif not self._disable_prints:
-            print(f"Loaded NYUv2 dataset without files")
+        else:
+            self.debug_print("Loaded NYUv2 dataset without files")
 
         # build config object
         semantic_label_list = getattr(
@@ -102,9 +98,8 @@ class NYUv2(NYUv2Meta, RGBDDataset):
     def split(self) -> str:
         return self._split
 
-    @property
-    def depth_mode(self) -> str:
-        return self._depth_mode
+    def _get_filename(self, idx: int) -> str:
+        return str(self._filenames[idx])
 
     def __len__(self) -> int:
         return len(self._filenames)
@@ -114,7 +109,7 @@ class NYUv2(NYUv2Meta, RGBDDataset):
         return NYUv2Meta.SPLIT_SAMPLE_KEYS[split]
 
     def _load(self, directory: str, filename: str) -> np.ndarray:
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.split,
                           directory,
                           f'{filename}.png')
@@ -157,7 +152,7 @@ class NYUv2(NYUv2Meta, RGBDDataset):
         return instance.astype('uint16')
 
     def _load_orientations(self, idx: int) -> Dict[int, float]:
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.split,
                           self.ORIENTATIONS_DIR,
                           f'{self._filenames[idx]}.json')
@@ -171,7 +166,7 @@ class NYUv2(NYUv2Meta, RGBDDataset):
         raise NotImplementedError()
 
     def _load_scene(self, idx: int) -> int:
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.split,
                           self.SCENE_CLASS_DIR,
                           f'{self._filenames[idx]}.txt')

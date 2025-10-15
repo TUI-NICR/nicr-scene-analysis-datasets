@@ -6,8 +6,9 @@ from typing import Callable, Type, Union
 
 from torch.utils.data import Dataset
 
+from .auxiliary_data import wrap_dataset_with_auxiliary_data
+from .dataset_base import KNOWN_CLASS_WEIGHTINGS  # noqa: F401
 from .dataset_base._base_dataset import DatasetBase
-from .dataset_base import KNOWN_CLASS_WEIGHTINGS    # noqa: F401
 
 
 class _PytorchDatasetWrapper(DatasetBase, Dataset):
@@ -43,8 +44,9 @@ class _PytorchDatasetWrapper(DatasetBase, Dataset):
         return sample
 
 
-from . import Cityscapes as _Cityscapes
+from . import ADE20K as _ADE20K
 from . import COCO as _COCO
+from . import Cityscapes as _Cityscapes
 from . import Hypersim as _Hypersim
 from . import NYUv2 as _NYUv2
 from . import ScanNet as _ScanNet
@@ -77,6 +79,10 @@ class SceneNetRGBD(_SceneNetRGBD, _PytorchDatasetWrapper):
 
 
 class SUNRGBD(_SUNRGBD, _PytorchDatasetWrapper):
+    pass
+
+
+class ADE20K(_ADE20K, _PytorchDatasetWrapper):
     pass
 
 
@@ -115,6 +121,7 @@ class ConcatDataset(_ConcatDataset, _PytorchConcatDatasetWrapper):
 
 
 _DATASETS = {
+    'ade20k': ADE20K,
     'cityscapes': Cityscapes,
     'coco': COCO,
     'hypersim': Hypersim,
@@ -126,6 +133,7 @@ _DATASETS = {
 KNOWN_DATASETS = tuple(_DATASETS.keys())
 
 DatasetType = Union[
+    ADE20K,
     Cityscapes,
     COCO,
     Hypersim,
@@ -137,9 +145,15 @@ DatasetType = Union[
 ]
 
 
-def get_dataset_class(name: str) -> Type[DatasetType]:
+def get_dataset_class(name: str, with_auxiliary_data: bool = False) -> Type[DatasetType]:
     name = name.lower()
     if name not in KNOWN_DATASETS:
         raise ValueError(f"Unknown dataset: '{name}'")
 
-    return _DATASETS[name]
+    original_dataset = _DATASETS[name]
+    if with_auxiliary_data:
+        current_dataset = wrap_dataset_with_auxiliary_data(original_dataset)
+    else:
+        current_dataset = original_dataset
+
+    return current_dataset

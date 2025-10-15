@@ -3,7 +3,7 @@
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 .. codeauthor:: Leonard Rabes <leonard.rabes@tu-ilmenau.de>
 """
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import os
 
@@ -64,13 +64,8 @@ class Cityscapes(CityscapesMeta, RGBDDataset):
 
         # load file lists
         if dataset_path is not None:
-            dataset_path = os.path.expanduser(dataset_path)
-            assert os.path.exists(dataset_path), dataset_path
-            self._dataset_path = dataset_path
-
-            # load file lists
             def _loadtxt(fn):
-                return np.loadtxt(os.path.join(self._dataset_path, fn),
+                return np.loadtxt(os.path.join(self.dataset_path, fn),
                                   dtype=str)
 
             self._files = {
@@ -89,8 +84,8 @@ class Cityscapes(CityscapesMeta, RGBDDataset):
             }
             assert all(len(li) == len(self._files['rgb'])
                        for li in self._files.values())
-        elif not self._disable_prints:
-            print(f"Loaded Cityscapes dataset without files")
+        else:
+            self.debug_print("Loaded Cityscapes dataset without files")
 
         # class names, class colors, and semantic directory
         if self._semantic_n_classes == 19:
@@ -126,9 +121,8 @@ class Cityscapes(CityscapesMeta, RGBDDataset):
     def split(self) -> str:
         return self._split
 
-    @property
-    def depth_mode(self) -> str:
-        return self._depth_mode
+    def _get_filename(self, idx: int) -> str:
+        return str(self._files['rgb'][idx]).replace('.png', '')
 
     def __len__(self) -> int:
         return len(self._files['rgb'])
@@ -138,7 +132,7 @@ class Cityscapes(CityscapesMeta, RGBDDataset):
         return CityscapesMeta.SPLIT_SAMPLE_KEYS[split]
 
     def _load(self, directory: str, filename: str) -> np.ndarray:
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.split,
                           directory,
                           filename)

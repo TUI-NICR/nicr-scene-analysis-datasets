@@ -7,27 +7,27 @@ from typing import Dict, List, Optional, Tuple, Union
 import argparse as ap
 import io
 import json
-import os
 from multiprocessing.pool import Pool
+import os
 import sys
 import traceback
 import zipfile
 
 import cv2
 import numpy as np
-from PIL import Image
 import pandas as pd
 import pkg_resources
+from PIL import Image
 from scipy.spatial.transform import Rotation
 from tqdm import tqdm
 
 from ...utils.io import create_dir
 from ...utils.io import create_or_update_creation_metafile
-from .scannet import ScanNetMeta
 from .scannet import VALID_CLASS_IDS_549
-from .SensorData import SensorData
+from .scannet import ScanNetMeta
 from .scannet200_constants import VALID_CLASS_IDS_20
 from .scannet200_constants import VALID_CLASS_IDS_200
+from .SensorData import SensorData
 
 DATASET_SCANS_DIR = ('scans', 'scans', 'scans_test')
 DATASET_FNAME_COMBINED_LABELS = 'scannetv2-labels.combined.tsv'  # from dataset
@@ -44,14 +44,6 @@ SPLITS_FILEPATHS = (
         pkg_resources.resource_filename(__name__, 'scannetv2_test.txt'),
     )
 
-# colors scannet40 and nyuv2 operate on the same labels, only the RGB
-# values are different
-SEMANTIC_COLORS_PER_CLASS = {
-    20: ('scannet20',),
-    40: ('scannet40', 'nyuv2'),
-    200: ('scannet200',),
-    549: tuple(),  # dont export the 549 colors as images
-}
 
 EXCEPTION_JSON_DUMP_FILE = "exception_dict_dump.json"
 FAILED_IMAGES_FILE = "failed_img.txt"
@@ -124,6 +116,8 @@ class NICRSensorData(SensorData):
         parent_dir = os.path.dirname(output_path)
         create_dir(parent_dir)
 
+        # convert np.float to float for json serialization
+        intr = {k: float(v) for k, v in intr.items()}
         with open(output_path, 'w') as f:
             json.dump(intr, f)
 
@@ -188,10 +182,10 @@ class NICRSensorData(SensorData):
         cy = mat[1][2]
 
         return {
-            'fx': fx/width,
-            'fy': fy/height,
-            'cx': cx/width,
-            'cy': cy/height
+            'fx': float(fx/width),
+            'fy': float(fy/height),
+            'cx': float(cx/width),
+            'cy': float(cy/height)
         }
 
 
@@ -356,13 +350,6 @@ def get_out_path_dict(
                     sdir,
                     ScanNetMeta.SEMANTIC_DIR_FMT.format(mode, n_class))
 
-                #add colored directories
-                for n_class_color in SEMANTIC_COLORS_PER_CLASS[n_class]:
-                    col_name = n_class_color.replace(str(n_class), '')  # remove n_class from scannet color name (scannet40 -> scannet)
-                    out_paths[f'sem_{mode}_{n_class_color}_dir'] = os.path.join(
-                        sdir,
-                        ScanNetMeta.SEMANTIC_COLORED_DIR_FMT.format(mode, n_class, col_name))
-
         #dirs of instance img
         for mode in ScanNetMeta.INSTANCE_SEMANTIC_MODES:
             out_paths[f'inst_{mode}_dir'] = os.path.join(
@@ -434,8 +421,8 @@ def get_combined_to_549_dict(tsv_path: str) -> Dict[int, int]:
     labels = sorted(labels)
 
     c_to_549_dict = {0: 0}
-    for i, l in enumerate(labels):  # forces the mapping to result in dense labels without gaps
-        c_to_549_dict[l] = i
+    for i, label in enumerate(labels):  # forces the mapping to result in dense labels without gaps
+        c_to_549_dict[label] = i
 
     return c_to_549_dict
 
@@ -675,7 +662,7 @@ def parse_scene(
 
     #parse semantic data
     for mode in ScanNetMeta.INSTANCE_SEMANTIC_MODES:
-        mode_ext = f'-filt' if mode == ScanNetMeta.INSTANCE_SEMANTIC_MODES[1] else ''
+        mode_ext = '-filt' if mode == ScanNetMeta.INSTANCE_SEMANTIC_MODES[1] else ''
         sem_path = os.path.join(scene_dir, scene_name, DATASET_FNAME_EXTENSION_SEMANTIC.format(scene_name, mode_ext))
         sem_zip = NICRImageZip(sem_path, blacklist)
 
@@ -685,19 +672,12 @@ def parse_scene(
                 os.path.join(out_paths[f'sem_{mode}_{n_class}_dir'], camera, scene_name),
                 conversion_dict[n_class])
 
-            #add colored exports
-            for n_class_color in SEMANTIC_COLORS_PER_CLASS[n_class]:
-                sem_zip.add_export(
-                    os.path.join(out_paths[f'sem_{mode}_{n_class_color}_dir'], camera, scene_name),
-                    conversion_dict[n_class],
-                    ScanNetMeta.SEMANTIC_CLASS_COLORS[n_class_color])
-
         failed = sem_zip.export_all(frame_skip=base_subsample)  # execute all prev scheduled ways to export images
         export_failed_img(failed, sem_path)
 
     #parse instance data
     for mode in ScanNetMeta.INSTANCE_SEMANTIC_MODES:
-        mode_ext = f'-filt' if mode == ScanNetMeta.INSTANCE_SEMANTIC_MODES[1] else ''
+        mode_ext = '-filt' if mode == ScanNetMeta.INSTANCE_SEMANTIC_MODES[1] else ''
         inst_path = os.path.join(scene_dir, scene_name, DATASET_FNAME_EXTENSION_INSTANCE.format(scene_name, mode_ext))
         inst_zip = NICRImageZip(inst_path, blacklist)
 

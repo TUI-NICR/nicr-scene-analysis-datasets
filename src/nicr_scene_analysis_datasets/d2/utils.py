@@ -2,17 +2,17 @@
 """
 .. codeauthor:: Soehnke Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
 """
-from typing import Callable, Iterable, Dict, Tuple
+from typing import Callable, Dict, Iterable, Tuple
 
 import copy
 import os
 
+import numpy as np
+import torch
 from detectron2.data import DatasetCatalog
 from detectron2.data import MetadataCatalog
-import numpy as np
 from panopticapi.utils import IdGenerator
 from scipy import stats
-import torch
 
 from ..dataset_base import DatasetConfig
 from ..pytorch import DatasetType

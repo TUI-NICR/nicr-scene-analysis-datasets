@@ -115,7 +115,7 @@ class ScanNetMeta:
         SPLITS[2]: 'test'
     }
 
-    _DATA_SAMPLE_KEYS = ('identifier',
+    _DATA_SAMPLE_KEYS = ('identifier', 'meta',
                          'extrinsics',
                          'rgb', 'rgb_intrinsics',
                          'depth', 'depth_intrinsics')
@@ -155,7 +155,6 @@ class ScanNetMeta:
     # 'refined' refers to the filtered versions of semantic and instance images
     INSTANCE_SEMANTIC_MODES = ('raw', 'refined')
     SEMANTIC_DIR_FMT = 'semantic_{:s}_{:d}'
-    SEMANTIC_COLORED_DIR_FMT = 'semantic_{:s}_{:d}_colored_{:s}'
     INSTANCES_DIR_FMT = 'instance_{:s}'
 
     SCENE_CLASS_DIR = 'scene_class'

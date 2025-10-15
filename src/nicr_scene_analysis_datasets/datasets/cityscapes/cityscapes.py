@@ -14,7 +14,7 @@ from ...dataset_base import SemanticLabelList
 class CityscapesMeta:
     SPLITS = ('train', 'valid', 'test')
 
-    _DATA_SAMPLE_KEYS = ('identifier', 'rgb', 'depth')
+    _DATA_SAMPLE_KEYS = ('identifier', 'meta', 'rgb', 'depth')
     _ANNOTATION_SAMPLE_KEYS = ('semantic', 'instance')
     SPLIT_SAMPLE_KEYS = {
         SPLITS[0]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
@@ -75,11 +75,6 @@ class CityscapesMeta:
     DEPTH_RAW_DIR = 'depth_raw'
     DISPARITY_RAW_DIR = 'disparity_raw'
     RGB_DIR = 'rgb'
-
     SEMANTIC_FULL_DIR = 'semantic_33'
-    SEMANTIC_FULL_COLORED_DIR = 'semantic_33_colored'
-
     SEMANTIC_REDUCED_DIR = 'semantic_19'
-    SEMANTIC_REDUCED_COLORED_DIR = 'semantic_19_colored'
-
     INSTANCE_DIR = 'instance'

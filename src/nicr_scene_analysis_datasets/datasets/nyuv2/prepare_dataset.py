@@ -3,7 +3,10 @@
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 .. codeauthor:: Söhnke Benedikt Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
 
-See: https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html
+See:
+- old: https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html
+- new: https://cs.nyu.edu/~fergus/datasets/nyu_depth_v2.html
+
 """
 import argparse as ap
 import json
@@ -11,20 +14,18 @@ import os
 import tarfile
 from tempfile import gettempdir
 
-import h5py
 import cv2
+import h5py
 import numpy as np
 import pkg_resources
 from scipy.io import loadmat
 from tqdm import tqdm
 
 from ...utils.img import dimshuffle
-from ...utils.img import save_indexed_png
-from ...utils.io import download_file
 from ...utils.io import create_dir
 from ...utils.io import create_or_update_creation_metafile
+from ...utils.io import download_file
 from .nyuv2 import NYUv2Meta
-
 
 # https://github.com/VainF/nyuv2-python-toolkit/blob/master/splits.mat
 SPLITS_FILEPATH = pkg_resources.resource_filename(__name__,
@@ -122,7 +123,7 @@ def main(args=None):
         else:
             normal_filepath = os.path.expanduser(args.normal_filepath)
         if not os.path.exists(normal_filepath):
-            print(f"Downloading precomputed normals")
+            print("Downloading precomputed normals")
             download_file(DATASET_NORMAL_URL,
                           normal_filepath,
                           display_progressbar=True)
@@ -189,20 +190,8 @@ def main(args=None):
     # load classes and class mappings (number of classes are without void)
     classes_40 = loadmat(CLASSES_40_FILEPATH)
     classes_13 = loadmat(CLASSES_13_FILEPATH)['classMapping13'][0][0]
-    # class_names = {
-    #     894: ['void'] + [c[0] for c in classes_40['allClassName'][0]],
-    #     40: ['void'] + [c[0] for c in classes_40['className'][0]],
-    #     13: ['void'] + [c[0] for c in classes_13[1][0]]
-    # }
     mapping_894_to_40 = np.concatenate([[0], classes_40['mapClass'][0]])
     mapping_40_to_13 = np.concatenate([[0], classes_13[0][0]])
-
-    # get color (1 (void) + n_colors)
-    colors = {
-        894: np.array(NYUv2Meta.SEMANTIC_CLASS_COLORS_894, dtype='uint8'),
-        40: np.array(NYUv2Meta.SEMANTIC_CLASS_COLORS_40, dtype='uint8'),
-        13: np.array(NYUv2Meta.SEMANTIC_CLASS_COLORS_13, dtype='uint8')
-    }
 
     # normals
     if args.enable_normal_extraction:
@@ -244,18 +233,7 @@ def main(args=None):
         labels_13_base_path = os.path.join(
             output_path, split_dir, NYUv2Meta.SEMANTIC_DIR_FMT.format(13)
         )
-        labels_894_colored_base_path = os.path.join(
-            output_path, split_dir,
-            NYUv2Meta.SEMANTIC_COLORED_DIR_FMT.format(894)
-        )
-        labels_40_colored_base_path = os.path.join(
-            output_path, split_dir,
-            NYUv2Meta.SEMANTIC_COLORED_DIR_FMT.format(40)
-        )
-        labels_13_colored_base_path = os.path.join(
-            output_path, split_dir,
-            NYUv2Meta.SEMANTIC_COLORED_DIR_FMT.format(13)
-        )
+
         if args.enable_normal_extraction:
             normal_base_path = os.path.join(output_path, split_dir,
                                             NYUv2Meta.NORMAL_DIR)
@@ -271,9 +249,6 @@ def main(args=None):
         create_dir(labels_894_base_path)
         create_dir(labels_13_base_path)
         create_dir(labels_40_base_path)
-        create_dir(labels_894_colored_base_path)
-        create_dir(labels_13_colored_base_path)
-        create_dir(labels_40_colored_base_path)
         if args.enable_normal_extraction:
             create_dir(normal_base_path)
         create_dir(orientations_base_path)
@@ -323,32 +298,15 @@ def main(args=None):
             cv2.imwrite(os.path.join(labels_894_base_path, f'{idx:04d}.png'),
                         label_894)
 
-            # colored label image
-            # (normal png16 as this type does not support indexed palettes)
-            label_894_colored = colors[894][label_894]
-            cv2.imwrite(os.path.join(labels_894_colored_base_path,
-                                     f'{idx:04d}.png'),
-                        cv2.cvtColor(label_894_colored, cv2.COLOR_RGB2BGR))
-
             # label with 1+40 classes
             label_40 = mapping_894_to_40[label_894].astype('uint8')
             cv2.imwrite(os.path.join(labels_40_base_path, f'{idx:04d}.png'),
                         label_40)
-            # colored label image
-            # (indexed png8 with color palette)
-            save_indexed_png(os.path.join(labels_40_colored_base_path,
-                                          f'{idx:04d}.png'),
-                             label_40, colors[40])
 
             # label with 1+13 classes
             label_13 = mapping_40_to_13[label_40].astype('uint8')
             cv2.imwrite(os.path.join(labels_13_base_path, f'{idx:04d}.png'),
                         label_13)
-            # colored label image
-            # (indexed png8 with color palette)
-            save_indexed_png(os.path.join(labels_13_colored_base_path,
-                                          f'{idx:04d}.png'),
-                             label_13, colors[13])
 
             # normals
             if args.enable_normal_extraction:

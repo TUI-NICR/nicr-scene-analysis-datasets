@@ -36,7 +36,7 @@ USAGE = inspect.cleandoc(
 )
 
 
-def _parse_args():
+def _parse_args(args=None):
     parser = ap.ArgumentParser(
         formatter_class=ap.ArgumentDefaultsHelpFormatter,
         description="Viewer for semantic/instance/panoptic annotations."
@@ -52,6 +52,12 @@ def _parse_args():
         type=str,
         default='png',
         help="File extension for images to search for."
+    )
+    parser.add_argument(
+        '-r', '--recursive',
+        action='store_true',
+        default=False,
+        help="Search for images in `path_or_filepath` recursively."
     )
     parser.add_argument(
         '--rgb-format',
@@ -111,17 +117,20 @@ def _parse_args():
              "want to save a screenshot at the original size."
     )
 
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
-def _load_and_show(filepaths,
-                   idx,
-                   cmap,
-                   names,
-                   color_path=None,
-                   color_alpha=0.5,
-                   rgb_format=None,
-                   without_void=False):
+def _load_and_show(
+    filepaths,
+    base_path,
+    idx,
+    cmap,
+    names,
+    color_path=None,
+    color_alpha=0.5,
+    rgb_format=None,
+    without_void=False
+):
     # load image
     filepath = filepaths[idx]
     if os.path.splitext(filepath)[1] == '.npy':
@@ -147,9 +156,10 @@ def _load_and_show(filepaths,
             img = img.astype('uint32')
             img = img[..., 2]*256*256 + img[..., 1]*256 + img[..., 0]
         else:
-            raise ValueError(f"Unknown `rgb_format`: {rgb_format}")
+            raise ValueError(f"Unknown `rgb-format`: {rgb_format}")
 
-    print(f"[{idx}/{len(filepaths)-1}] {os.path.basename(filepath)} "
+    print(f"[{idx}/{len(filepaths)-1}] "
+          f"{filepath.replace(base_path, '').lstrip('/')} "
           f"(WxH: {img.shape[1]}x{img.shape[0]})")
 
     if img.ndim != 2:
@@ -170,10 +180,11 @@ def _load_and_show(filepaths,
     img_colored_bgr = cv2.cvtColor(img_colored, cv2.COLOR_RGB2BGR)
 
     # potentially overlay with rgb image
-    if color_path:
-        basename = os.path.splitext(os.path.basename(filepaths[idx]))[0]
-        # get corresponding color filepaths
-        color_filepaths = glob(os.path.join(color_path, f'{basename}.*'))
+    if color_path is not None:
+        # get corresponding color filepath candidates
+        color_filepaths = glob(
+            os.path.splitext(filepath.replace(base_path, color_path))[0] + '.*'
+        )
 
         if not color_filepaths:
             print("No corresponding color image found. "
@@ -203,8 +214,8 @@ def _load_and_show(filepaths,
     cv2.setMouseCallback(WINDOW_NAME, mouse_callback)
 
 
-def main():
-    args = _parse_args()
+def main(args=None):
+    args = _parse_args(args)
 
     # determine colors and names for visualization
     colors, names = get_colormap(
@@ -214,29 +225,43 @@ def main():
     max_len = len(max(names, key=len)) + 1
     cmap_str = '\n'.join(("{: <%ds} {}" % max_len).format(n+':', c)
                          for n, c in zip(names, colors.tolist()))
-    print_section("Colormap",
-                  f"Using: '{args.colormap}' with {len(colors)} colors:\n"
-                  f"{cmap_str}")
+    print_section(
+        "Colormap",
+        f"Using: '{args.colormap}' with {len(colors)} colors:\n{cmap_str}"
+    )
 
     # get filepaths
-    path = os.path.abspath(os.path.expanduser(args.path_or_filepath))
+    path_or_filepath = os.path.abspath(
+        os.path.expanduser(args.path_or_filepath)
+    )
 
-    if os.path.isfile(path):
-        path = os.path.dirname(args.path_or_filepath)
-        extension = os.path.splitext(args.path_or_filepath)[1][1:]
+    if os.path.isfile(path_or_filepath):
+        base_path = os.path.dirname(path_or_filepath)
+        extension = os.path.splitext(path_or_filepath)[1][1:]
     else:
+        base_path = path_or_filepath
         extension = args.file_extension
 
-    files = sorted(glob(os.path.join(path, f'*.{extension}')))
-    if os.path.isfile(args.path_or_filepath):
-        idx = files.index(args.path_or_filepath)
+    if args.recursive:
+        filepaths = glob(os.path.join(base_path, '**', f'*.{extension}'))
+    else:
+        filepaths = glob(os.path.join(base_path, f'*.{extension}'))
+    filepaths = sorted(filepaths)
+
+    if os.path.isfile(path_or_filepath):
+        idx = filepaths.index(path_or_filepath)
     else:
         idx = 0
+    print_section(
+        "Files",
+        f"Found {len(filepaths)} '*.{extension}' file(s) in: {base_path}"
+    )
 
-    print_section("Files",
-                  f"Found {len(files)} '*.{extension}' file(s) in: {path}")
+    color_path = None
+    if args.color_path is not None:
+        color_path = os.path.abspath(os.path.expanduser(args.color_path))
 
-    if len(files) == 0:
+    if len(filepaths) == 0:
         return
 
     print_section("Usage", USAGE)
@@ -257,11 +282,11 @@ def main():
             break
         elif key in (83, ord('n'), ord('d')):
             # next image (ARROW_RIGHT, n, or d)
-            idx = (idx + 1) % len(files)
+            idx = (idx + 1) % len(filepaths)
             reload = True
         elif key in (81, ord('p'), ord('a')):
             # previous image (ARROW_LEFT, p, or a)
-            idx = (idx - 1) % len(files)
+            idx = (idx - 1) % len(filepaths)
             reload = True
         elif key in (43, ord('+')):
             # increase color alpha (PLUS)
@@ -280,11 +305,12 @@ def main():
 
         if reload:
             # show image
-            _load_and_show(files,
+            _load_and_show(filepaths,
+                           base_path,
                            idx,
                            cmap=colors,
                            names=names,
-                           color_path=args.color_path,
+                           color_path=color_path,
                            color_alpha=color_alpha,
                            rgb_format=args.rgb_format,
                            without_void=args.without_void)

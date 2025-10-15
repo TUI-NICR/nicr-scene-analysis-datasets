@@ -5,32 +5,30 @@
 
 """
 import argparse as ap
-from functools import lru_cache
 import json
 import os
-from pkg_resources import resource_string
 import shutil
+from functools import lru_cache
 
 import cv2
 import h5py
+import numpy as np
+import scipy.io
 from numba import jit
 from numba import prange
-import numpy as np
 from numpy import matlib
-import scipy.io
+from pkg_resources import resource_string
 from scipy.spatial.transform import Rotation as R
 from tqdm import tqdm
 
-from ...utils.img import save_indexed_png
-from ...utils.io import download_file
 from ...utils.io import create_dir
 from ...utils.io import create_or_update_creation_metafile
+from ...utils.io import download_file
 from ...utils.io import extract_zip
-from .match_nyuv2_instances import NYUv2InstancesMatcher
-from ..nyuv2.nyuv2 import NYUv2Meta
 from ..nyuv2 import prepare_dataset as nyuv2_prepare_dataset
+from ..nyuv2.nyuv2 import NYUv2Meta
+from .match_nyuv2_instances import NYUv2InstancesMatcher
 from .sunrgbd import SUNRGBDMeta
-
 
 # see: http://rgbd.cs.princeton.edu/ in section Data and Annotation
 DATASET_URL = 'http://rgbd.cs.princeton.edu/data/SUNRGBD.zip'
@@ -720,24 +718,6 @@ def main(args=None):
             dtype=np.uint8
         )   # force c-contiguous for later proccessing
         cv2.imwrite(semantic_path, semantic)
-
-        semantic_path_colored_sun = os.path.join(
-            output_path, split_dir, SUNRGBDMeta.SEMANTIC_COLORED_DIR_SUN,
-            cam_path, f'{i:05d}.png'
-        )
-        create_dir(os.path.dirname(semantic_path_colored_sun))
-        save_indexed_png(semantic_path_colored_sun, semantic,
-                         np.array(SUNRGBDMeta.SEMANTIC_CLASS_COLORS,
-                                  dtype='uint8'))
-
-        semantic_path_colored_nyuv2 = os.path.join(
-            output_path, split_dir, SUNRGBDMeta.SEMANTIC_COLORED_DIR_NYUV2,
-            cam_path, f'{i:05d}.png'
-        )
-        create_dir(os.path.dirname(semantic_path_colored_nyuv2))
-        save_indexed_png(semantic_path_colored_nyuv2, semantic,
-                         np.array(SUNRGBDMeta.SEMANTIC_CLASS_COLORS_NYUV2,
-                                  dtype='uint8'))
 
         # Scene class ---------------------------------------------------------
         scene_class_path_tmp = os.path.join(data_path, sample_path,

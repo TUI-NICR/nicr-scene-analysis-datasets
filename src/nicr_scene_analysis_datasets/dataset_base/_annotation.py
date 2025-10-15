@@ -19,8 +19,18 @@ class IntrinsicCameraParametersNormalized(dict):
     pass
 
 
+class MetaDict(dict):
+    """Enables a custom pytorch collate function ignore the meta data."""
+    pass
+
+
 class OrientationDict(dict):
     """Enables a custom pytorch collate function ignore the orientations."""
+    pass
+
+
+class PanopticEmbeddingDict(dict):
+    """Enables a custom pytorch collate function ignore the embeddings."""
     pass
 
 

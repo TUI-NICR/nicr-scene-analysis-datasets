@@ -6,22 +6,21 @@
 """
 import argparse as ap
 import datetime
+import functools
 import json
 import os
+import re
 
 import cv2
 import h5py
-import re
 import numpy as np
 import pandas as pd
-import functools
 from scipy.spatial.transform import Rotation
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from ...utils.io import create_or_update_creation_metafile
 from ...utils.io import download_file
-from ...utils.img import save_indexed_png as save_indexed_png_
 from .hypersim import HypersimMeta
 
 
@@ -90,12 +89,6 @@ def color_semgentation(label, with_void=True):
     cmap = np.asarray(colors, dtype='uint8')
 
     return cmap[label], cmap
-
-
-def save_indexed_png(filepath, label, colormap):
-    assert label.min() >= 0 and label.max() <= 40, f'Label should be in [0, 40]' \
-                                                   f' but is in [{label.min()}, {label.max()}]'
-    return save_indexed_png_(filepath, label, colormap)
 
 
 def save_pc(filepath, pc):
@@ -822,17 +815,7 @@ def process_one_sample(
         HypersimMeta.SEMANTIC_DIR,
         entry['path']
     )
-    semantic_colored_path = os.path.join(
-        destination_path,
-        entry['split_partition_name'],
-        HypersimMeta.SEMANTIC_COLORED_DIR,
-        entry['path']
-    )
     _write_image(semantic_path, semantic)
-    # additionally save a colored version as indexed png
-    os.makedirs(os.path.dirname(semantic_colored_path), exist_ok=True)
-    save_indexed_png(semantic_colored_path, semantic,
-                     colormap=HypersimMeta.CLASS_COLORS)
 
     # -> instance --------------------------------------------------------------
     instances_path = os.path.join(
@@ -930,7 +913,6 @@ def main(args=None):
                       HypersimMeta.DEPTH_INTRINSICS_DIR,
                       HypersimMeta.EXTRINSICS_DIR,
                       HypersimMeta.SEMANTIC_DIR,
-                      HypersimMeta.SEMANTIC_COLORED_DIR,
                       HypersimMeta.INSTANCES_DIR,
                       HypersimMeta.BOXES_3D_DIR,
                       HypersimMeta.ORIENTATIONS_DIR,

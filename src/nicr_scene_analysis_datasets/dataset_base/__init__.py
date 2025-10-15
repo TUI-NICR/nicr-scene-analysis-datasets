@@ -4,7 +4,9 @@
 """
 from ._annotation import ExtrinsicCameraParametersNormalized    # noqa: F401
 from ._annotation import IntrinsicCameraParametersNormalized    # noqa: F401
+from ._annotation import MetaDict   # noqa: F401
 from ._annotation import OrientationDict    # noqa: F401
+from ._annotation import PanopticEmbeddingDict    # noqa: F401
 from ._annotation import SampleIdentifier    # noqa: F401
 from ._annotation import SceneLabel    # noqa: F401
 from ._annotation import SceneLabelList    # noqa: F401
@@ -19,6 +21,7 @@ from ._config import DatasetConfig    # noqa: F401
 
 from ._meta import DepthStats    # noqa: F401
 
+from ._base_dataset import DatasetBase    # noqa: F401
 from ._concat_dataset import ConcatDataset    # noqa: F401
 from ._depth_dataset import DepthDataset    # noqa: F401
 from ._rgb_dataset import RGBDataset    # noqa: F401

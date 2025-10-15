@@ -33,6 +33,6 @@ For more details, see: [Cityscapes Dataset](https://www.cityscapes-dataset.com/)
     ```bash
     # general usage
     nicr_sa_prepare_dataset cityscapes \
-        /path/where/to/datasets/cityscapes \
+        /path/where/to/store/cityscapes \
         $CITYSCAPES_DOWNLOAD_DIR
     ```

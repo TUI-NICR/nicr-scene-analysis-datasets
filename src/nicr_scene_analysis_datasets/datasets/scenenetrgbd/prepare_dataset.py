@@ -11,12 +11,11 @@ import os
 import shutil
 import traceback
 
+import cv2
 import numpy as np
 from termcolor import cprint
 from tqdm import tqdm
-import cv2
 
-from ...utils.img import save_indexed_png
 from ...utils.io import create_or_update_creation_metafile
 from .scenenetrgbd import SceneNetRGBDMeta
 
@@ -341,19 +340,6 @@ def main(args=None):
                     )
                     cv2.imwrite(d_fp, semantic_13)
 
-                    # save colored semantic
-                    save_indexed_png(
-                        os.path.join(
-                            _output_path(
-                                traj.render_path,
-                                SceneNetRGBDMeta.SEMANTIC_13_COLORED_DIR
-                            ),
-                            f'{view.frame_num}.png'
-                        ),
-                        semantic_13,
-                        colormap=SceneNetRGBDMeta.SEMANTIC_LABEL_LIST.colors_array
-                    )
-
                     # save scene
                     d_fp = os.path.join(
                                 _output_path(traj.render_path,
@@ -385,8 +371,6 @@ def main(args=None):
                                      SceneNetRGBDMeta.DEPTH_DIR),
                         _output_path(traj.render_path,
                                      SceneNetRGBDMeta.SEMANTIC_13_DIR),
-                        _output_path(traj.render_path,
-                                     SceneNetRGBDMeta.SEMANTIC_13_COLORED_DIR),
                         _output_path(traj.render_path,
                                      SceneNetRGBDMeta.INSTANCES_DIR),
                         _output_path(traj.render_path,
@@ -431,7 +415,6 @@ def main(args=None):
         SceneNetRGBDMeta.RGB_DIR: '.jpg',
         SceneNetRGBDMeta.DEPTH_DIR: '.png',
         SceneNetRGBDMeta.SEMANTIC_13_DIR: '.png',
-        SceneNetRGBDMeta.SEMANTIC_13_COLORED_DIR: '.png',
         SceneNetRGBDMeta.INSTANCES_DIR: '.png',
         SceneNetRGBDMeta.SCENE_CLASS_DIR: '.txt',
     }

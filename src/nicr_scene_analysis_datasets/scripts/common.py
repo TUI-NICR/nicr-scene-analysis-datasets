@@ -12,6 +12,7 @@ from ..utils import img as img_utils
 
 DATASET_COLORMAPS = {
     'auto_n': {},
+    'ade20k': {},
     'cityscapes_19': {'semantic_n_classes': 19},
     'cityscapes_33': {'semantic_n_classes': 33},
     'coco': {},

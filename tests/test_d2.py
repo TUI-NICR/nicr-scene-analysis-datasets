@@ -22,7 +22,8 @@ def test_d2_dataset(dataset_name, dataset_split):
         'coco_test',
         'nyuv2_valid',
         'scenenetrgbd_test',
-        'sunrgbd_valid'
+        'sunrgbd_valid',
+        'ade20k_test_panoptic_2017',
     })
     # Get the path of the dataset
     dataset_path = DATASET_PATH_DICT[dataset_name]
@@ -30,10 +31,14 @@ def test_d2_dataset(dataset_name, dataset_split):
     nicr_d2.set_dataset_path(dataset_path)
     # Get the correct name for using the dataset from the DatasetCatalog
     dataset_name_d2 = f'{dataset_name}_{dataset_split}'
+    # Get a corrcet split for ade20k dataset
+    if dataset_name == 'ade20k':
+        dataset_name_d2 = f'{dataset_name}_{dataset_split}_panoptic_2017'
+
     if dataset_name_d2 in invalid_names:
         return
     dataset = DatasetCatalog.get(dataset_name_d2)
-    dataset_config = MetadataCatalog.get(dataset_name_d2).dataset_config
+    assert MetadataCatalog.get(dataset_name_d2).dataset_config
 
     for i, sample in enumerate(dataset):
         assert isinstance(sample, dict)

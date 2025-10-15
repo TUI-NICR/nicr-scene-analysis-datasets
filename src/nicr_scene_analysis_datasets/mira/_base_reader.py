@@ -533,7 +533,7 @@ class MIRAReaderBase(mirapy.Unit, AutoGetterSetter):
         self._iterating = True
 
         # let the watchdog start iterating to ensure everything is loaded
-        mirapy.log(LOG_LEVEL, f"Watchdog will start iterating soon.")
+        mirapy.log(LOG_LEVEL, "Watchdog will start iterating soon.")
         self._last_time = time()
 
     def pause_resume(self, pause=None):
@@ -568,7 +568,7 @@ class MIRAReaderBase(mirapy.Unit, AutoGetterSetter):
     def cb_dataset_end(self):
         # might be extended in derived class
 
-        mirapy.log(LOG_LEVEL, f"Done")
+        mirapy.log(LOG_LEVEL, "Done")
         if self._kill_when_done:
             self._kill_time = time() + 5
 
@@ -581,7 +581,7 @@ class MIRAReaderBase(mirapy.Unit, AutoGetterSetter):
 
         if self._ignore_next_feedback:
             self._ignore_next_feedback = False
-            mirapy.log(LOG_LEVEL, f"Feedback skipped")
+            mirapy.log(LOG_LEVEL, "Feedback skipped")
             return
         self.process_next_frame()
 

@@ -56,6 +56,7 @@ the door frame and the door.
 ## Prepare dataset
 
 1. Download and unzip dataset files:
+
     ```bash
     wget https://raw.githubusercontent.com/apple/ml-hypersim/6cbaa80207f44a312654e288cf445016c84658a1/code/python/tools/dataset_download_images.py
 
@@ -66,20 +67,60 @@ the door frame and the door.
     ```
 
 2. Convert dataset:
+
     ```bash
     # general usage
     nicr_sa_prepare_dataset hypersim \
-        /path/where/to/datasets/hypersim \
+        /path/where/to/store/hypersim \
         /path/to/uncompressed/hypersim \
         [--additional-subsamples N1 N2] \
         [--n-processes N]
     ```
+    With arguments:
+    - `--additional_subsamples`:
+    For additional subsampled versions of the dataset.
+    - `--n-processes`:
+    Number of worker processes to spawn.
+    - `--no-tilt-shift-conversion`:
+    Disable projecting the data/annotations back to a standard camera ignoring the 
+    tilt-shift parameters (use this to create dataset compatible with < v050).
 
-With arguments:
-- `--additional_subsamples`:
-  For additional subsampled versions of the dataset.
-- `--n-processes`:
-  Number of worker processes to spawn.
-- `--no-tilt-shift-conversion`:
-  Disable projecting the data/annotations back to a standard camera ignoring the 
-  tilt-shift parameters (use this to create dataset compatible with < v050).
+3. (Optional) Generate auxiliary data:
+    > **Note**: To use auxiliary data generation, the package must be installed with the `withauxiliarydata` option:
+    > ```bash
+    > pip install -e .[withauxiliarydata]
+    > ```
+
+    ```bash
+    # for auxiliary data such as synthetic depth and rgb/panoptic embeddings
+    nicr_sa_generate_auxiliary_data \
+        --dataset hypersim \
+        --dataset-path /path/to/already/prepared/hypersim/dataset \
+        --auxiliary-data depth image-embedding panoptic-embedding \
+        --embedding-estimator-device cuda \
+        --embedding-estimators alpha_clip__l14-336-grit-20m \
+        --depth-estimator-device cuda \
+        --depth-estimators depthanything_v2__indoor_large \
+        --cache-models
+    ```
+  
+    With arguments:
+    - `--dataset-path`:
+        Path to the prepared Hypersim dataset.
+    - `--auxiliary-data`:
+        Types of auxiliary data to generate:
+        - `depth`: Generates synthetic depth images from RGB.
+        - `image-embedding`: Uses Alpha-CLIP to generate an embedding for the entire image.
+        - `panoptic-embedding`: Uses Alpha-CLIP to generate an embedding for each panoptic mask.
+    - `--depth-estimator-device`:
+        Device to use for depth estimation (`cpu` or `cuda`).
+    - `--depth-estimators`:
+        Depth estimator(s) to use. Use `depthanything_v2__indoor_large` to match DVEFormer.
+    - `--embedding-estimator-device`:
+        Device to use for embedding estimation (`cpu` or `cuda`).
+    - `--embedding-estimators`:
+        Embedding estimator(s) to use. Use `alpha_clip__l14-336-grit-20m` to match DVEFormer.
+    - `--cache-models`:
+        Cache models locally to avoid reloading them in future runs.
+
+

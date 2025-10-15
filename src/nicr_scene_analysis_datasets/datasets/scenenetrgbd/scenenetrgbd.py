@@ -14,7 +14,7 @@ class SceneNetRGBDMeta:
     SPLITS = ('train', 'valid')
     SPLIT_FILELIST_FILENAMES = {SPLITS[0]: 'train.txt', SPLITS[1]: 'valid.txt'}
 
-    _DATA_SAMPLE_KEYS = ('identifier', 'rgb', 'depth')
+    _DATA_SAMPLE_KEYS = ('identifier', 'meta', 'rgb', 'depth')
     _ANNOTATION_SAMPLE_KEYS = ('semantic', 'instance', 'scene')
     SPLIT_SAMPLE_KEYS = {
         SPLITS[0]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
@@ -40,7 +40,6 @@ class SceneNetRGBDMeta:
     DEPTH_DIR = 'depth'
     RGB_DIR = 'rgb'
     SEMANTIC_13_DIR = 'semantic_13'
-    SEMANTIC_13_COLORED_DIR = 'semantic_13_colored'
     INSTANCES_DIR = 'instance'
     SCENE_CLASS_DIR = 'scene'
 

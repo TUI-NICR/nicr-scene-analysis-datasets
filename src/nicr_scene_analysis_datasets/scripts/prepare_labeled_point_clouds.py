@@ -20,7 +20,7 @@ from .. import KNOWN_DATASETS
 from .. import ScanNet
 
 
-def _parse_args():
+def _parse_args(args=None):
     parser = ap.ArgumentParser(
         formatter_class=ap.ArgumentDefaultsHelpFormatter,
         description=(
@@ -88,7 +88,7 @@ def _parse_args():
              "benchmarking scripts will be written."
     )
 
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
 def _preprocess_sample(sample, args):
@@ -204,9 +204,9 @@ def _combine_semantic_instance(semantic, instance, shift=(1 << 16)):
     return (semantic_label * shift) + instance_label
 
 
-def main():
+def main(args=None):
     # parse args
-    args = _parse_args()
+    args = _parse_args(args)
 
     # base output directories
     output_path = osp.join(args.output_path, args.split, 'ply')

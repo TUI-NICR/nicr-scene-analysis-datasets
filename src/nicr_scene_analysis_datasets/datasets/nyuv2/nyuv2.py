@@ -16,7 +16,7 @@ class NYUv2Meta:
     SPLIT_FILELIST_FILENAMES = {SPLITS[0]: 'train.txt', SPLITS[1]: 'test.txt'}
     SPLIT_DIRS = {SPLITS[0]: 'train', SPLITS[1]: 'test'}
 
-    _DATA_SAMPLE_KEYS = ('identifier', 'rgb', 'depth')
+    _DATA_SAMPLE_KEYS = ('identifier', 'meta', 'rgb', 'depth')
     _ANNOTATION_SAMPLE_KEYS = ('semantic', 'instance', 'orientations',
                                'scene', 'normal')
     SPLIT_SAMPLE_KEYS = {
@@ -52,7 +52,6 @@ class NYUv2Meta:
     SCENE_CLASS_DIR = 'scene_class'
     NORMAL_DIR = 'normal'
     SEMANTIC_DIR_FMT = 'semantic_{:d}'
-    SEMANTIC_COLORED_DIR_FMT = 'semantic_{:d}_colored'
 
     # scene labels from nyuv2
     SCENE_LABEL_LIST = SceneLabelList((

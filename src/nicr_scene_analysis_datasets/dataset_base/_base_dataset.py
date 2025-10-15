@@ -6,25 +6,28 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import abc
+import dataclasses
+import os
+import warnings
 from copy import deepcopy
 from functools import lru_cache
-import warnings
 
 import numpy as np
 
 from ..utils.io import load_creation_metafile
 from ._annotation import ExtrinsicCameraParametersNormalized
+from ._annotation import MetaDict
 from ._annotation import OrientationDict
 from ._annotation import SampleIdentifier
-from ._config import DatasetConfig
 from ._class_weighting import compute_class_weights
+from ._config import DatasetConfig
 
 
 class DatasetBase(abc.ABC):
     def __init__(
         self,
         *,
-        dataset_path: Optional[str],
+        dataset_path: Optional[str] = None,
         sample_keys: Tuple[str] = ('semantic',),
         use_cache: bool = False,
         cache_disable_deepcopy: bool = False,  # kwargs only in derived classes
@@ -36,9 +39,19 @@ class DatasetBase(abc.ABC):
         # force lowercase for sample keys
         sample_keys = tuple(sk.lower() for sk in sample_keys)
 
+        self._dataset_path = dataset_path
+        if self._dataset_path is not None:
+            self._dataset_path = os.path.expanduser(self._dataset_path)
+
+            # check dataset path - catch a common error
+            assert os.path.exists(self._dataset_path), (
+                f"Dataset path does not exist: '{self._dataset_path}'"
+            )
         self._camera = None
         self._sample_keys = sample_keys
         self._sample_key_loaders = {}
+        # will be determined in the first call to load_meta()
+        self._sample_meta = None
         self._use_cache = use_cache
         self._cache_disable_deepcopy = cache_disable_deepcopy
         self._disable_prints = disable_prints
@@ -51,8 +64,8 @@ class DatasetBase(abc.ABC):
                           "sample dicts.")
 
         # load creation meta
-        if dataset_path is not None:
-            self._creation_meta = load_creation_metafile(dataset_path)
+        if self._dataset_path is not None:
+            self._creation_meta = load_creation_metafile(self._dataset_path)
             if self._creation_meta is None:
                 warnings.warn(f"No creation meta file found at: "
                               f"'{dataset_path}'.")
@@ -95,6 +108,14 @@ class DatasetBase(abc.ABC):
                 getattr(self, func_name)
             )
 
+    def debug_print(self, *args, **kwargs):
+        if not self._disable_prints:
+            print(*args, **kwargs)
+
+    @property
+    def dataset_path(self) -> str:
+        return self._dataset_path
+
     @property
     def creation_meta(self) -> Union[None, Dict]:
         # we may have multiple entries in the meta file, so we take the last
@@ -134,6 +155,10 @@ class DatasetBase(abc.ABC):
 
     @abc.abstractmethod
     def __len__(self) -> int:
+        pass
+
+    @abc.abstractmethod
+    def _get_filename(self, idx: int) -> str:
         pass
 
     def __getitem__(self, idx: int):
@@ -208,6 +233,12 @@ class DatasetBase(abc.ABC):
     @abc.abstractmethod
     def _load_identifier(self, idx: int) -> SampleIdentifier:
         pass
+
+    def _load_meta(self, idx: int) -> MetaDict:
+        if self._sample_meta is None:
+            # load meta data from config
+            self._sample_meta = MetaDict(dataclasses.asdict(self.config))
+        return self._sample_meta
 
     def _load_extrinsics(self, idx: int) -> ExtrinsicCameraParametersNormalized:
         # so far single extrinsic parameters for the entire sample

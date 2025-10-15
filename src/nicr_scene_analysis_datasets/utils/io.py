@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
+.. codeauthor:: Soehnke Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
 """
 from typing import Any, Dict, List, Union
 
 from collections import OrderedDict
 from datetime import datetime
 import getpass
+import hashlib
 import json
 import os
 import sys
@@ -116,6 +118,7 @@ def create_or_update_creation_metafile(
     # update file
     ts = time()
     meta.append({
+        'executable': sys.executable,
         'command': ' '.join(sys.argv),
         'timestamp': int(ts),
         'local_time': datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S'),
@@ -153,3 +156,13 @@ def load_creation_metafile(dataset_basepath: str) -> Dict[str, Any]:
         meta['version'] = _normalize_version(meta['version'])
 
     return metas
+
+
+def get_sha256_hash(filepath: str) -> str:
+    sha256_hash = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        # Read and update hash string value in blocks of 4K
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    # Get the hexadecimal digest of the hash
+    return sha256_hash.hexdigest()

@@ -5,10 +5,10 @@
 """
 import argparse as ap
 import os
-
-import numpy as np
-import cv2
 import shutil
+
+import cv2
+import numpy as np
 
 from ..nyuv2.nyuv2 import NYUv2Meta
 from .sunrgbd import SUNRGBDMeta

@@ -16,7 +16,6 @@ from panopticapi.utils import rgb2id
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
-from ...utils.img import save_indexed_png
 from ...utils.io import create_dir
 from ...utils.io import create_or_update_creation_metafile
 from ...utils.io import download_file
@@ -64,13 +63,6 @@ def _extract_semantic_and_instance_annotation(annotation,
     path = os.path.join(output_path, COCOMeta.SEMANTIC_DIR, wxh_str)
     create_dir(path)
     cv2.imwrite(os.path.join(path, annotation['file_name']), semantic)
-
-    # semantic colored
-    class_colors = COCOMeta.SEMANTIC_LABEL_LIST.colors_array
-    path = os.path.join(output_path, COCOMeta.SEMANTIC_COLORED_DIR, wxh_str)
-    create_dir(path)
-    save_indexed_png(os.path.join(path, annotation['file_name']),
-                     semantic, class_colors)
 
     # instance
     path = os.path.join(output_path, COCOMeta.INSTANCES_DIR, wxh_str)
@@ -188,12 +180,11 @@ def main(args=None):
 
         for sample_dir in (COCOMeta.IMAGE_DIR,
                            COCOMeta.SEMANTIC_DIR,
-                           COCOMeta.SEMANTIC_COLORED_DIR,
                            COCOMeta.INSTANCES_DIR):
             create_dir(os.path.join(split_path, sample_dir))
 
         # move images to the correct location and fill vcam lookup dict
-        print(f"-> moving images")
+        print("-> moving images")
 
         tmp_path = os.path.join(output_path, 'extracted', split_coco)
         img_path = os.path.join(split_path, COCOMeta.IMAGE_DIR)
@@ -236,7 +227,6 @@ def main(args=None):
         # perform small sanity check
         for sample_dir in (COCOMeta.IMAGE_DIR,
                            COCOMeta.SEMANTIC_DIR,
-                           COCOMeta.SEMANTIC_COLORED_DIR,
                            COCOMeta.INSTANCES_DIR):
             ext = '.jpg' if COCOMeta.IMAGE_DIR == sample_dir else '.png'
             for fn, wxh_str in vcam_lookup_dict[split].items():

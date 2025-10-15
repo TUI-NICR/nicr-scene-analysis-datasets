@@ -38,7 +38,7 @@ USAGE = inspect.cleandoc(
 )
 
 
-def _parse_args():
+def _parse_args(args=None):
     parser = ap.ArgumentParser(
         formatter_class=ap.ArgumentDefaultsHelpFormatter,
         description=(
@@ -144,7 +144,7 @@ def _parse_args():
              "point clouds given by `filepath` and `--second-pc-filepath`."
     )
 
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
 def _get_instance_colors(instance_labels,
@@ -277,9 +277,9 @@ def _load_ply(
     return pc, labels, mask
 
 
-def main():
+def main(args=None):
     # parse args
-    args = _parse_args()
+    args = _parse_args(args)
 
     # get colormaps
     semantic_cmap = get_colormap(args.semantic_colormap)

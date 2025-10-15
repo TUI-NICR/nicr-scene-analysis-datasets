@@ -6,22 +6,19 @@
 """
 from typing import Any, Dict, Optional, Tuple, Union
 
-from dataclasses import asdict
+import json
 import os
 
-import numpy as np
 import cv2
-import json
+import numpy as np
 
-from ...dataset_base import build_dataset_config
 from ...dataset_base import DatasetConfig
+from ...dataset_base import ExtrinsicCameraParametersNormalized
+from ...dataset_base import IntrinsicCameraParametersNormalized
 from ...dataset_base import OrientationDict
 from ...dataset_base import RGBDDataset
 from ...dataset_base import SampleIdentifier
-from ...dataset_base import ExtrinsicCameraParametersNormalized
-from ...dataset_base import IntrinsicCameraParametersNormalized
-
-
+from ...dataset_base import build_dataset_config
 from .sunrgbd import SUNRGBDMeta
 
 
@@ -117,12 +114,8 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
 
         # load file list
         if dataset_path is not None:
-            dataset_path = os.path.expanduser(dataset_path)
-            assert os.path.exists(dataset_path), dataset_path
-            self._dataset_path = dataset_path
-
             # load whole file list
-            fp = os.path.join(self._dataset_path,
+            fp = os.path.join(self.dataset_path,
                               self.SPLIT_FILELIST_FILENAMES[self._split])
             with open(fp, 'r') as f:
                 file_list = f.read().splitlines()
@@ -135,9 +128,8 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
                 if camera in self._cameras:
                     self._files['list'].append(fn)
                     self._files['dict'][camera].append(fn)
-
-        elif not self._disable_prints:
-            print(f"Loaded SUNRGBD dataset without files")
+        else:
+            self.debug_print("Loaded SUNRGBD dataset without files")
 
         # build config object
         if not self._depth_force_mm:
@@ -186,10 +178,6 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
         return self._split
 
     @property
-    def depth_mode(self) -> str:
-        return self._depth_mode
-
-    @property
     def depth_force_mm(self) -> bool:
         return self._depth_force_mm
 
@@ -209,7 +197,7 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
         filename = self._get_filename(idx)
 
         # determine filepath
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.split,
                           directory,
                           f'{filename}{extension}')

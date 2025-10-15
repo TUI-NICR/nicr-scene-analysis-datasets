@@ -3,7 +3,6 @@
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 """
 import cv2
-import numpy as np
 
 from PythonImageWrapper import Img
 from PythonImageWrapper import Img8U1
@@ -49,7 +48,7 @@ def to_mira_img8u1(img):
 
 
 def parse_list(comma_sep_str, cast_to=str):
-    if cast_to == bool:
+    if cast_to is bool:
         cast_to = lambda x: x.lower() in ['true', '1']
 
     return [cast_to(e.strip())

@@ -4,7 +4,7 @@
 .. codeauthor:: Leonard Rabes <leonard.rabes@tu-ilmenau.de>
 """
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import json
 import os
@@ -74,8 +74,10 @@ class ScanNet(ScanNetMeta, RGBDDataset):
         self._scene_use_indoor_domestic_labels = scene_use_indoor_domestic_labels
         self._subsample = subsample
 
-        if subsample is not None and not self._disable_prints:
-            print(f"ScanNet: using subsample: '{subsample}' for '{split}'")
+        if subsample is not None:
+            self.debug_print(
+                f"ScanNet: using subsample: '{subsample}' for '{split}'"
+            )
 
         # cameras
         if cameras is None:
@@ -88,13 +90,9 @@ class ScanNet(ScanNetMeta, RGBDDataset):
 
         # load file list
         if dataset_path is not None:
-            dataset_path = os.path.expanduser(dataset_path)
-            assert os.path.exists(dataset_path), dataset_path
-            self._dataset_path = dataset_path
-
             # load whole file list for correct split and subsample
             fp = os.path.join(
-                self._dataset_path,
+                self.dataset_path,
                 self.get_split_filelist_filenames(subsample)[self._split]
             )
             with open(fp, 'r') as f:
@@ -110,9 +108,8 @@ class ScanNet(ScanNetMeta, RGBDDataset):
                 if camera in self._cameras:
                     self._files['list'].append(fn)
                     self._files['dict'][camera].append(fn)
-
-        elif not self._disable_prints:
-            print(f"Loaded ScanNet dataset without files")
+        else:
+            self.debug_print("Loaded ScanNet dataset without files")
 
         # build config object
         semantic_label_list = getattr(
@@ -160,10 +157,6 @@ class ScanNet(ScanNetMeta, RGBDDataset):
     def split(self) -> str:
         return self._split
 
-    @property
-    def depth_mode(self) -> str:
-        return self._depth_mode
-
     @staticmethod
     def get_available_sample_keys(split: str) -> Tuple[str]:
         return ScanNetMeta.SPLIT_SAMPLE_KEYS[split]
@@ -187,7 +180,7 @@ class ScanNet(ScanNetMeta, RGBDDataset):
         extension: str = '.png'
     ) -> np.ndarray:
         filename = self._get_filename(index)
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.SPLIT_DIRS[self.split],
                           directory,
                           f'{filename}{extension}')
@@ -204,7 +197,7 @@ class ScanNet(ScanNetMeta, RGBDDataset):
         self,
         idx: int
     ) -> ExtrinsicCameraParametersNormalized:
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.SPLIT_DIRS[self.split],
                           self.EXTRINSICS_DIR,
                           f'{self._get_filename(idx)}.json')
@@ -227,7 +220,7 @@ class ScanNet(ScanNetMeta, RGBDDataset):
         self,
         idx: int
     ) -> IntrinsicCameraParametersNormalized:
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.SPLIT_DIRS[self.split],
                           self.INTRINSICS_RGB_DIR,
                           f'{self._get_scene_name(idx)}.json')
@@ -252,7 +245,7 @@ class ScanNet(ScanNetMeta, RGBDDataset):
         self,
         idx: int
     ) -> IntrinsicCameraParametersNormalized:
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.SPLIT_DIRS[self.split],
                           self.INTRINSICS_DEPTH_DIR,
                           f'{self._get_scene_name(idx)}.json')
@@ -301,7 +294,7 @@ class ScanNet(ScanNetMeta, RGBDDataset):
         return instance.astype('uint16')
 
     def _load_scene(self, idx: int) -> int:
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.SPLIT_DIRS[self.split],
                           self.SCENE_CLASS_DIR,
                           f'{self._get_scene_name(idx)}.txt')

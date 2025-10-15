@@ -14,6 +14,8 @@ from nicr_scene_analysis_datasets import KNOWN_DATASETS
 from nicr_scene_analysis_datasets import SUNRGBD
 from nicr_scene_analysis_datasets import NYUv2
 from nicr_scene_analysis_datasets import get_dataset_class
+from nicr_scene_analysis_datasets.scripts.generate_auxiliary_data \
+    import SCENE_INDOOR_DOMESTIC_DATASETS
 from nicr_scene_analysis_datasets.utils.testing import DATASET_PATH_DICT
 
 
@@ -117,9 +119,12 @@ def test_datatypes(dataset_name):
 
     # Get the dataset class and prepare the arguments
     dataset = get_dataset_class(dataset_name)
+    train_split_key = 'train'
+    if dataset_name == 'ade20k':
+        train_split_key = 'train_panoptic_2017'
     dataset_args = {
         'dataset_path': DATASET_PATH_DICT[dataset_name],
-        'sample_keys': dataset.get_available_sample_keys('train'),
+        'sample_keys': dataset.get_available_sample_keys(train_split_key),
         'use_cache': False
     }
 
@@ -172,3 +177,52 @@ def test_datatypes(dataset_name):
 
             instance = sample['instance']
             assert instance.dtype == np.uint16
+
+
+@pytest.mark.parametrize('dataset_name', KNOWN_DATASETS)
+@pytest.mark.parametrize('with_auxiliary_data', [True, False])
+def test_dataset_config(dataset_name, with_auxiliary_data):
+    Dataset = get_dataset_class(
+        dataset_name, with_auxiliary_data=with_auxiliary_data
+    )
+    kwargs = {}
+    kwargs['dataset_path'] = DATASET_PATH_DICT[dataset_name]
+    dataset_n_classes = Dataset.SEMANTIC_N_CLASSES
+    dataset_n_classes_was_int = False
+    if isinstance(dataset_n_classes, int):
+        dataset_n_classes = (dataset_n_classes,)
+        dataset_n_classes_was_int = True
+    for n_classes in dataset_n_classes:
+        if not dataset_n_classes_was_int:
+            kwargs['semantic_n_classes'] = n_classes
+
+        # Prepare configurations to test - start with default config
+        configs = [kwargs.copy()]
+
+        # Add indoor domestic configuration if supported
+        if dataset_name in SCENE_INDOOR_DOMESTIC_DATASETS:
+            domestic_kwargs = kwargs.copy()
+            domestic_kwargs['scene_use_indoor_domestic_labels'] = True
+            configs.append(domestic_kwargs)
+
+        # Test all configurations
+        for config in configs:
+            # Create dataset with current configuration
+            dataset = Dataset(**config)
+            available_sample_keys = dataset.get_available_sample_keys(dataset.split)
+
+            # Test semantic labels if available
+            if 'semantic' in available_sample_keys:
+                assert len(dataset.config.semantic_label_list_without_void) == n_classes
+                assert len(dataset.config.semantic_label_list) == n_classes + 1
+
+            # Test scene labels if available
+            if 'scene' in available_sample_keys:
+                # Get label list information
+                scene_label_list = dataset.config.scene_label_list
+                # Verify label list exists
+                assert scene_label_list is not None
+                # Get class names from label list
+                class_names = scene_label_list.class_names
+                # Verify class names exist
+                assert len(class_names) > 0

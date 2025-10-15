@@ -19,7 +19,7 @@ class SUNRGBDMeta:
     SPLITS = ('train', 'test')
     SPLIT_FILELIST_FILENAMES = {SPLITS[0]: 'train.txt', SPLITS[1]: 'test.txt'}
 
-    _DATA_SAMPLE_KEYS = ('identifier',
+    _DATA_SAMPLE_KEYS = ('identifier', 'meta',
                          'extrinsics',
                          'rgb', 'rgb_intrinsics',
                          'depth', 'depth_intrinsics')
@@ -66,9 +66,6 @@ class SUNRGBDMeta:
 
     RGB_DIR = 'rgb'
     SEMANTIC_DIR = 'semantic'
-    SEMANTIC_COLORED_DIR = 'semantic_colored'
-    SEMANTIC_COLORED_DIR_SUN = 'semantic_colored_sunrgbd'
-    SEMANTIC_COLORED_DIR_NYUV2 = 'semantic_colored_nyuv2'
     DEPTH_DIR = 'depth'
     DEPTH_DIR_RAW = 'depth_raw'
     EXTRINSICS_DIR = 'extrinsics'

@@ -13,7 +13,6 @@ from tqdm import tqdm
 import cv2
 
 from .cityscapes import CityscapesMeta
-from ...utils.img import save_indexed_png
 from ...utils.io import create_or_update_creation_metafile
 from ...utils.io import get_files_by_extension
 
@@ -196,14 +195,6 @@ def main(args=None):
         shutil.copy(sem_fp, os.path.join(dest_path, basename))
         filelists[subset]['semantic_33'].append(os.path.join(city, basename))
 
-        # full: 1+33 classes colored
-        dest_path = os.path.join(args.output_path, subset,
-                                 CityscapesMeta.SEMANTIC_FULL_COLORED_DIR,
-                                 city)
-        os.makedirs(dest_path, exist_ok=True)
-        save_indexed_png(os.path.join(dest_path, basename), label_full,
-                         colormap=CityscapesMeta.SEMANTIC_LABEL_LIST_FULL.colors_array)
-
         # map full to reduced: 1+33 classes -> 1+19 classes
         label_reduced = mapping_1plus33_to_1plus19[label_full]
 
@@ -213,14 +204,6 @@ def main(args=None):
         os.makedirs(dest_path, exist_ok=True)
         cv2.imwrite(os.path.join(dest_path, basename), label_reduced)
         filelists[subset]['semantic_19'].append(os.path.join(city, basename))
-
-        # reduced: 1+19 classes colored
-        dest_path = os.path.join(args.output_path, subset,
-                                 CityscapesMeta.SEMANTIC_REDUCED_COLORED_DIR,
-                                 city)
-        os.makedirs(dest_path, exist_ok=True)
-        save_indexed_png(os.path.join(dest_path, basename), label_reduced,
-                         colormap=CityscapesMeta.SEMANTIC_LABEL_LIST_REDUCED.colors_array)
 
     print("Copying instance label files")
     for inst_fp in tqdm(instance_label_filepaths):

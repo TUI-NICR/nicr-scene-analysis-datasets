@@ -40,12 +40,8 @@ class COCO(COCOMeta, RGBDataset):
         self._split = split
 
         if dataset_path is not None:
-            dataset_path = os.path.expanduser(dataset_path)
-            assert os.path.exists(dataset_path), dataset_path
-            self._dataset_path = dataset_path
-
             # load filenames
-            fp = os.path.join(self._dataset_path,
+            fp = os.path.join(self.dataset_path,
                               self.SPLIT_FILELIST_FILENAMES[self._split])
             self._filenames = list(np.loadtxt(fp, dtype=str))
 
@@ -83,9 +79,8 @@ class COCO(COCOMeta, RGBDataset):
                     self._filenames.extend(
                         os.path.join(camera, fn) for fn in filenames
                     )
-
-        elif not self._disable_prints:
-            print(f"Loaded COCO dataset without files")
+        else:
+            self.debug_print("Loaded COCO dataset without files")
             self._cameras = self.CAMERAS     # single dummy camera
 
         # build config object
@@ -131,8 +126,7 @@ class COCO(COCOMeta, RGBDataset):
     ) -> np.ndarray:
         # get filename depending on current camera
         filename = self._get_filename(idx)
-
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.split,
                           directory,
                           f'{filename}{ext}')

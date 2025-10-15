@@ -2,16 +2,15 @@
 """
 .. codeauthor:: Soehnke Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
 """
-from ..pytorch import Cityscapes
+from ..pytorch import ADE20K
 from ..pytorch import COCO
+from ..pytorch import Cityscapes
 from ..pytorch import Hypersim
 from ..pytorch import NYUv2
 from ..pytorch import ScanNet
 from ..pytorch import SceneNetRGBD
 from ..pytorch import SUNRGBD
-
 from .utils import register_dataset_to_d2
-
 
 # Automatically register all datasets with some default keys so that they
 # are available through Detectron2's DatasetCatalog.
@@ -20,6 +19,11 @@ from .utils import register_dataset_to_d2
 # Moreover, we currently do not load the 'depth' sample key for any dataset.
 # If your interested in another sample key, remove the dataset and call
 # 'register_dataset_to_d2' yourself.
+register_dataset_to_d2(
+    name_prefix='ade20k',
+    dataset_class=ADE20K,
+    sample_keys=('identifier', 'rgb', 'semantic', 'instance')
+)
 register_dataset_to_d2(
     name_prefix='cityscapes',
     dataset_class=Cityscapes,

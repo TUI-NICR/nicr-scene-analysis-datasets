@@ -2,9 +2,8 @@
 """
 .. codeauthor:: Daniel Seichter <daniel.seichter@tu-ilmenau.de>
 """
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
-import json
 import os
 
 import cv2
@@ -58,18 +57,13 @@ class SceneNetRGBD(SceneNetRGBDMeta, RGBDDataset):
 
         # load file list
         if dataset_path is not None:
-            dataset_path = os.path.expanduser(dataset_path)
-            assert os.path.exists(dataset_path), dataset_path
-            self._dataset_path = dataset_path
-
             # load file list
-            fp = os.path.join(self._dataset_path,
+            fp = os.path.join(self.dataset_path,
                               self.SPLIT_FILELIST_FILENAMES[self._split])
             with open(fp, 'r') as f:
                 self._files = f.read().splitlines()
-
-        elif not self._disable_prints:
-            print(f"Loaded SceneNetRGBD dataset without files")
+        else:
+            self.debug_print("Loaded SceneNetRGBD dataset without files")
 
         if self._scene_use_indoor_domestic_labels:
             # use remapped scene labels
@@ -100,9 +94,8 @@ class SceneNetRGBD(SceneNetRGBDMeta, RGBDDataset):
     def split(self) -> str:
         return self._split
 
-    @property
-    def depth_mode(self) -> str:
-        return self._depth_mode
+    def _get_filename(self, idx: int) -> str:
+        return self._files[idx]
 
     def __len__(self) -> int:
         return len(self._files)
@@ -118,7 +111,7 @@ class SceneNetRGBD(SceneNetRGBDMeta, RGBDDataset):
         extension: str = '.png'
     ) -> Union[str, np.ndarray]:
         # determine filepath
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.split,
                           directory,
                           f'{self._files[idx]}{extension}')

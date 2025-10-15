@@ -11,7 +11,7 @@ class COCOMeta:
     SPLITS = ('train', 'valid')
     SPLIT_FILELIST_FILENAMES = {SPLITS[0]: 'train.txt', SPLITS[1]: 'valid.txt'}
 
-    _DATA_SAMPLE_KEYS = ('identifier', 'rgb')
+    _DATA_SAMPLE_KEYS = ('identifier', 'meta', 'rgb')
     _ANNOTATION_SAMPLE_KEYS = ('semantic', 'instance')
     SPLIT_SAMPLE_KEYS = {
         SPLITS[0]: _DATA_SAMPLE_KEYS+_ANNOTATION_SAMPLE_KEYS,
@@ -24,7 +24,6 @@ class COCOMeta:
     # has some gray scale images
     IMAGE_DIR = 'image'
     SEMANTIC_DIR = 'semantic'
-    SEMANTIC_COLORED_DIR = 'semantic_colored'
     INSTANCES_DIR = 'instance'
 
     # number of semantic classes without void

@@ -32,7 +32,7 @@ class HypersimMeta:
                   SPLITS[1]: 'valid',
                   SPLITS[2]: 'test'}
 
-    _DATA_SAMPLE_KEYS = ('identifier',
+    _DATA_SAMPLE_KEYS = ('identifier', 'meta',
                          'extrinsics',
                          'rgb', 'rgb_intrinsics',
                          'depth', 'depth_intrinsics')
@@ -82,7 +82,6 @@ class HypersimMeta:
     RGB_DIR = 'rgb'
     RGB_INTRINSICS_DIR = 'rgb_intrinsics'
     SEMANTIC_DIR = 'semantic_40'
-    SEMANTIC_COLORED_DIR = 'semantic_40_colored'
     EXTRINSICS_DIR = 'extrinsics'
     INSTANCES_DIR = 'instance'
     BOXES_3D_DIR = 'boxes_3d'

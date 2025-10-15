@@ -67,24 +67,22 @@ class Hypersim(HypersimMeta, RGBDDataset):
             self._cameras = cameras
 
         self._subsample = subsample
-        if subsample and not self._disable_prints:
-            print(f"Hypersim: using subsample: '{subsample}' for '{split}'")
+        if subsample is not None:
+            self.debug_print(
+                f"Hypersim: using subsample: '{subsample}' for '{split}'"
+            )
 
         if dataset_path is not None:
-            dataset_path = os.path.expanduser(dataset_path)
-            assert os.path.exists(dataset_path), dataset_path
-            self._dataset_path = dataset_path
-
             # load filenames
             # set constant here to have the same identifier across all datasets
             self.SPLIT_FILELIST_FILENAMES = self.get_split_filelist_filenames(
                 subsample=subsample
             )
-            fp = os.path.join(self._dataset_path,
+            fp = os.path.join(self.dataset_path,
                               self.SPLIT_FILELIST_FILENAMES[self._split])
             self._filenames = np.loadtxt(fp, dtype=str)
-        elif not self._disable_prints:
-            print(f"Loaded Hypersim dataset without files")
+        else:
+            self.debug_print("Loaded Hypersim dataset without files")
 
         # build config object
         if self._scene_use_indoor_domestic_labels:
@@ -102,6 +100,9 @@ class Hypersim(HypersimMeta, RGBDDataset):
 
         # register loader functions
         self.auto_register_sample_key_loaders()
+
+    def _get_filename(self, idx: int) -> str:
+        return self._filenames[idx]
 
     def __len__(self) -> int:
         return len(self._filenames)
@@ -123,10 +124,6 @@ class Hypersim(HypersimMeta, RGBDDataset):
         return self._split
 
     @property
-    def depth_mode(self) -> str:
-        return self._depth_mode
-
-    @property
     def instance_max_instances_per_image(self) -> int:
         return self.MAX_INSTANCES_PER_IMAGE
 
@@ -135,7 +132,7 @@ class Hypersim(HypersimMeta, RGBDDataset):
         directory: str,
         filename: str,
     ) -> np.ndarray:
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.split,
                           directory,
                           filename)
@@ -152,7 +149,7 @@ class Hypersim(HypersimMeta, RGBDDataset):
 
     def _load_rgb_intrinsics(self, idx) -> IntrinsicCameraParametersNormalized:
         scene, cam, _ = self._load_identifier(idx)
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.split,
                           self.RGB_INTRINSICS_DIR,
                           scene,
@@ -172,7 +169,7 @@ class Hypersim(HypersimMeta, RGBDDataset):
 
     def _load_depth_intrinsics(self, idx) -> IntrinsicCameraParametersNormalized:
         scene, cam, _ = self._load_identifier(idx)
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.split,
                           self.DEPTH_INTRINSICS_DIR,
                           scene,
@@ -193,7 +190,7 @@ class Hypersim(HypersimMeta, RGBDDataset):
         )
 
     def _load_extrinsics(self, idx: int) -> ExtrinsicCameraParametersNormalized:
-        fp_extrinsics = os.path.join(self._dataset_path,
+        fp_extrinsics = os.path.join(self.dataset_path,
                                      self.split,
                                      self.EXTRINSICS_DIR,
                                      f'{self._filenames[idx]}.json')
@@ -238,7 +235,7 @@ class Hypersim(HypersimMeta, RGBDDataset):
             return OrientationDict({})
 
         # use orientations provided by the dataset
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.split,
                           self.ORIENTATIONS_DIR,
                           f'{self._filenames[idx]}.json')
@@ -250,7 +247,7 @@ class Hypersim(HypersimMeta, RGBDDataset):
         return OrientationDict(orientations)
 
     def _load_3d_boxes(self, idx: int) -> Dict[str, Any]:
-        fp_box = os.path.join(self._dataset_path,
+        fp_box = os.path.join(self.dataset_path,
                               self.split,
                               self.BOXES_3D_DIR,
                               f'{self._filenames[idx]}.json')
@@ -260,7 +257,7 @@ class Hypersim(HypersimMeta, RGBDDataset):
         return boxes_dict
 
     def _load_scene(self, idx: int) -> int:
-        fp = os.path.join(self._dataset_path,
+        fp = os.path.join(self.dataset_path,
                           self.split,
                           self.SCENE_CLASS_DIR,
                           f'{self._filenames[idx]}.txt')
