@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "create hypersim ply",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "nicr_scene_analysis_datasets.scripts.create_labeled_point_clouds",
             "console": "integratedTerminal",
@@ -16,12 +16,11 @@
                 "--max-depth", "20",
                 "--write-scannet-label",
             ],
-            "env": {
-            },
+            "env": {},
         },
         {
             "name": "create hypersim",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "nicr_scene_analysis_datasets.datasets.hypersim.prepare_dataset",
             "console": "integratedTerminal",
@@ -37,7 +36,7 @@
         },
         {
             "name": "create scennetrgbd",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "nicr_scene_analysis_datasets.datasets.scenenetrgbd.prepare_dataset",
             "console": "integratedTerminal",
@@ -51,7 +50,7 @@
         },
         {
             "name": "create sunrgbd v060",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "nicr_scene_analysis_datasets.datasets.sunrgbd.prepare_dataset",
             "console": "integratedTerminal",
