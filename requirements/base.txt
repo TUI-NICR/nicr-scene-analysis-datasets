@@ -1,0 +1,5 @@
+cityscapesScripts==1.5.0
+numpy
+pillow
+scipy
+tqdm>=4.42.0

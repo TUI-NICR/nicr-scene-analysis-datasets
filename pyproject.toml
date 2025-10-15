@@ -1,0 +1,135 @@
+# build system -----------------------------------------------------------------
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools>=61.0",
+    "wheel",
+]
+
+# project metadata -------------------------------------------------------------
+[project]
+name = "nicr-scene-analysis-datasets"
+description = "Package to prepare and use common datasets for scene analysis."
+authors = [
+    { name = "Daniel Seichter", email = "daniel.seichter@tu-ilmenau.de" },
+    { name = "Soehnke Fischedick", email = "soehnke.fischedick@tu-ilmenau.de" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.8"
+dynamic = [ "version", "dependencies", "optional-dependencies" ]
+
+[project.urls]
+Homepage = "https://www.tu-ilmenau.de/neurob"
+Repository = "https://github.com/TUI-NICR/nicr-scene-analysis-datasets"
+
+# package configuration  -------------------------------------------------------
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# additional package data
+[tool.setuptools.package-data]
+nicr_scene_analysis_datasets = [
+    # ADE20K
+    "datasets/ade20k/README.md",
+    # Cityscapes
+    "datasets/cityscapes/README.md",
+    # COCO
+    "datasets/coco/README.md",
+    # Hypersim
+    "datasets/hypersim/README.md",
+    # NYUv2
+    "datasets/nyuv2/README.md",
+    "datasets/nyuv2/class13Mapping.mat",
+    "datasets/nyuv2/classMapping40.mat",
+    "datasets/nyuv2/splits.mat",
+    "datasets/nyuv2/manual_orientations_test.json",
+    "datasets/nyuv2/manual_orientations_train.json",
+    # SceneNet RGB-D
+    "datasets/scenenetrgbd/README.md",
+    "datasets/scenenetrgbd/scenenet.proto",
+    # SUN RGB-D
+    "datasets/sunrgbd/README.md",
+    "datasets/sunrgbd/nyu_additional_class_mapping.json",
+    "datasets/sunrgbd/nyu_weak_box_3d_mapping.json",
+    # ScanNet
+    "datasets/scannet/README.md",
+    "datasets/scannet/scannetv2_train.txt",
+    "datasets/scannet/scannetv2_val.txt",
+    "datasets/scannet/scannetv2_test.txt",
+]
+
+# version and dependencies
+[tool.setuptools.dynamic]
+version = { attr = "nicr_scene_analysis_datasets.version.__version__" }
+dependencies = { file = [
+    "requirements/base.txt"
+] }
+optional-dependencies.withpreparation = { file = [
+    "requirements/preparation.txt"
+] }
+optional-dependencies.withopencv = { file = [
+    "requirements/opencv.txt"
+] }
+optional-dependencies.withtorch = { file = [
+    "requirements/torch.txt"
+] }
+optional-dependencies.with3d = { file = [
+    "requirements/3d.txt"
+] }
+optional-dependencies.withauxiliarydata = { file = [
+    "requirements/torch.txt",
+    "requirements/depth_estimation.txt",
+    "requirements/embedding_estimation.txt",
+] }
+optional-dependencies.withdepthestimation = { file = [
+    "requirements/torch.txt",
+    "requirements/depth_estimation.txt",
+] }
+optional-dependencies.withembeddingestimation = { file = [
+    "requirements/torch.txt",
+    "requirements/embedding_estimation.txt"
+] }
+optional-dependencies.test = { file = [
+    "requirements/torch.txt",
+    "requirements/depth_estimation.txt",
+    "requirements/embedding_estimation.txt",
+    "requirements/test.txt",
+] }
+
+# entry points
+[project.scripts]
+nicr_sa_prepare_dataset = "nicr_scene_analysis_datasets.scripts.prepare_dataset:main"
+nicr_sa_prepare_labeled_point_clouds = "nicr_scene_analysis_datasets.scripts.prepare_labeled_point_clouds:main"
+nicr_sa_depth_viewer = "nicr_scene_analysis_datasets.scripts.viewer_depth:main"
+nicr_sa_semantic_instance_viewer = "nicr_scene_analysis_datasets.scripts.viewer_semantic_instance:main"
+nicr_sa_labeled_pc_viewer = "nicr_scene_analysis_datasets.scripts.viewer_labeled_point_cloud:main"
+nicr_sa_generate_auxiliary_data = "nicr_scene_analysis_datasets.scripts.generate_auxiliary_data:main"
+
+# linting ----------------------------------------------------------------------
+[tool.ruff]
+exclude = [
+    # we are not the authors of these files
+    "src/*scannet/scannet200_constants.py",
+    "src/*scannet/SensorData.py",
+    # stuff
+    "stuff/*",
+]
+
+[tool.ruff.lint]
+ignore = [
+    # E501 line too long (82 > 79 characters)
+    "E501",
+    # E402 module level import not at top of file
+    "E402",
+    # E731 do not assign a lambda expression, use a def
+    "E731",
+    # [not implemented in ruff] line breaks W503 vs. W504
+    # "W504"
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = [
+    # allow unused imports in __init__.py files
+    "F401"
+]

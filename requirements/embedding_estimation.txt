@@ -1,0 +1,3 @@
+loralib
+alpha-clip @ git+https://github.com/SunzeY/AlphaCLIP.git
+gdown

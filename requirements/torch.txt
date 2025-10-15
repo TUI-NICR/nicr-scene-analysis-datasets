@@ -1,0 +1,1 @@
+torch>=2.3.1    # DepthAnythingV2 requires torch.nn.RMSNorm

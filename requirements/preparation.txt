@@ -1,0 +1,6 @@
+h5py
+numba
+pandas
+panopticapi @ git+https://github.com/cocodataset/panopticapi.git
+protobuf
+termcolor

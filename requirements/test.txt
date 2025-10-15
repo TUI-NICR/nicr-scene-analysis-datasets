@@ -1,0 +1,2 @@
+panopticapi @ git+https://github.com/cocodataset/panopticapi.git
+pytest>=3.0.2
