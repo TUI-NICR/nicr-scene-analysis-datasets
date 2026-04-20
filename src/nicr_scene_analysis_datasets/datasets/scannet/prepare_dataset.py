@@ -16,13 +16,13 @@ import zipfile
 import cv2
 import numpy as np
 import pandas as pd
-import pkg_resources
 from PIL import Image
-from scipy.spatial.transform import Rotation
 from tqdm import tqdm
 
 from ...utils.io import create_dir
 from ...utils.io import create_or_update_creation_metafile
+from ...utils.io import get_resource_path
+from ...utils.rotation import PatchedSciPyRotation
 from .scannet import VALID_CLASS_IDS_549
 from .scannet import ScanNetMeta
 from .scannet200_constants import VALID_CLASS_IDS_20
@@ -39,11 +39,10 @@ DATASET_FNAME_EXTENSION_INSTANCE = '{:s}_2d-instance{:s}.zip'
 # https://github.com/ScanNet/ScanNet/blob/master/Tasks/Benchmark/scannetv2_val.txt
 # https://github.com/ScanNet/ScanNet/blob/master/Tasks/Benchmark/scannetv2_test.txt
 SPLITS_FILEPATHS = (
-        pkg_resources.resource_filename(__name__, 'scannetv2_train.txt'),
-        pkg_resources.resource_filename(__name__, 'scannetv2_val.txt'),
-        pkg_resources.resource_filename(__name__, 'scannetv2_test.txt'),
-    )
-
+    get_resource_path(__package__, 'scannetv2_train.txt'),
+    get_resource_path(__package__, 'scannetv2_val.txt'),
+    get_resource_path(__package__, 'scannetv2_test.txt'),
+)
 
 EXCEPTION_JSON_DUMP_FILE = "exception_dict_dump.json"
 FAILED_IMAGES_FILE = "failed_img.txt"
@@ -157,7 +156,9 @@ class NICRSensorData(SensorData):
 
         rot_mat = mat[0:3, 0:3]  # get 3x3 rotation matrix (rij | i,j in [0, 1, 2])
         transl = mat[0:3, 3]  # translation component of the matrix (tx, ty, tz)
-        rotation_quat = Rotation.from_matrix(rot_mat).as_quat()  # get quaternion from rot matrix
+        rotation_quat = PatchedSciPyRotation.from_matrix(
+            rot_mat, assume_valid=True
+        ).as_quat()  # get quaternion from rot matrix
         quat_x, quat_y, quat_z, quat_w = rotation_quat
 
         return {
@@ -589,7 +590,7 @@ def schedule_scenes(
         with open(dump_path, 'w') as f:
             # save entire dictionary to file
             json.dump(working_dict, f)
-        print(f"Unhandled exception occured, working dictionary dumped to: '{dump_path}'")
+        print(f"Unhandled exception occurred, working dictionary dumped to: '{dump_path}'")
         raise ex
 
 
@@ -702,17 +703,17 @@ def main(args=None) -> None:
         description="Prepare ScanNet dataset."
     )
     parser.add_argument(
-        'source_path',
-        type=str,
-        help="Path where dataset is stored"
-    )
-    parser.add_argument(
         'output_path',
         type=str,
         help="Path where to store parsed dataset"
     )
     parser.add_argument(
-        '--label-map-file',
+        'source_path',
+        type=str,
+        help="Path where dataset is stored"
+    )
+    parser.add_argument(
+        '--label-map-filepath', '--label-map-file',
         default=None,
         type=str,
         help="Path to scannet-labels.combined.tsv, "
@@ -759,7 +760,7 @@ def main(args=None) -> None:
 
     # handle source paths
     source_path: str = os.path.expanduser(args.source_path)
-    tsv_path: str = args.label_map_file
+    tsv_path: str = args.label_map_filepath
     if tsv_path is None:  # get the default tsv path
         tsv_path = os.path.join(source_path, DATASET_FNAME_COMBINED_LABELS)
     else:
@@ -809,7 +810,7 @@ def main(args=None) -> None:
         base_subsample=subsample,
         add_subsamples=add_subsamples)
 
-    create_or_update_creation_metafile(output_path)
+    create_or_update_creation_metafile(output_path, prepare_args=vars(args))
 
 
 if __name__ == '__main__':

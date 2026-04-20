@@ -7,6 +7,8 @@ Mapping tables to convert semantic classes in ADE20K.
 Based on:
     - [1] https://github.com/CSAILVision/sceneparsing/blob/master/convertFromADE/mapFromADE.txt
     - [2] https://github.com/CSAILVision/ADE20K/blob/main/utils/ade20k_instance_catid_mapping.txt
+
+Generated with: stuff/ade20k/generate_semantic_class_mappings.py
 """
 
 # -----------------------------------------------------------------------------

@@ -14,7 +14,15 @@ DATASET_BASEPATH = os.environ.get(
                  'version_{}{}{}'.format(*get_version(with_suffix=False)))
 )
 
-DATASET_PATH_DICT = {
+_DATASET_PATH_DICT = {
     key: os.path.join(DATASET_BASEPATH, key)
     for key in KNOWN_DATASETS
 }
+
+class DatasetPathDict(dict):
+    def __getitem__(self, key):
+        value = super().__getitem__(key)
+        print(f"Getting test dataset path for '{key}': '{value}'")
+        return value
+
+DATASET_PATH_DICT = DatasetPathDict(_DATASET_PATH_DICT)

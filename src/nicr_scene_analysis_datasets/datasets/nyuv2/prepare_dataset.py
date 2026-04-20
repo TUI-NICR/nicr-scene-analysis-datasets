@@ -17,7 +17,6 @@ from tempfile import gettempdir
 import cv2
 import h5py
 import numpy as np
-import pkg_resources
 from scipy.io import loadmat
 from tqdm import tqdm
 
@@ -25,26 +24,23 @@ from ...utils.img import dimshuffle
 from ...utils.io import create_dir
 from ...utils.io import create_or_update_creation_metafile
 from ...utils.io import download_file
+from ...utils.io import get_resource_path
 from .nyuv2 import NYUv2Meta
 
 # https://github.com/VainF/nyuv2-python-toolkit/blob/master/splits.mat
-SPLITS_FILEPATH = pkg_resources.resource_filename(__name__,
-                                                  'splits.mat')
+SPLITS_FILEPATH = get_resource_path(__package__, 'splits.mat')
 # https://github.com/VainF/nyuv2-python-toolkit/blob/master/class13Mapping.mat
-CLASSES_13_FILEPATH = pkg_resources.resource_filename(__name__,
-                                                      'class13Mapping.mat')
+CLASSES_13_FILEPATH = get_resource_path(__package__, 'class13Mapping.mat')
 # https://github.com/VainF/nyuv2-python-toolkit/blob/master/classMapping40.mat
-CLASSES_40_FILEPATH = pkg_resources.resource_filename(__name__,
-                                                      'classMapping40.mat')
-MANUAL_ORIENTATIONS_TRAIN_FILEPATH = pkg_resources.resource_filename(
-    __name__,
+CLASSES_40_FILEPATH = get_resource_path(__package__, 'classMapping40.mat')
+MANUAL_ORIENTATIONS_TRAIN_FILEPATH = get_resource_path(
+    __package__,
     'manual_orientations_train.json'
 )
-MANUAL_ORIENTATIONS_TEST_FILEPATH = pkg_resources.resource_filename(
-    __name__,
+MANUAL_ORIENTATIONS_TEST_FILEPATH = get_resource_path(
+    __package__,
     'manual_orientations_test.json'
 )
-
 # see: http://horatio.cs.nyu.edu/mit/silberman/nyu_depth_v2/
 DATASET_URL = 'http://horatio.cs.nyu.edu/mit/silberman/nyu_depth_v2/nyu_depth_v2_labeled.mat'
 
@@ -132,7 +128,7 @@ def main(args=None):
     create_dir(output_path)
 
     # create or update metafile
-    create_or_update_creation_metafile(output_path)
+    create_or_update_creation_metafile(output_path, prepare_args=vars(args))
 
     # load mat file and extract images
     print(f"Loading mat file: '{mat_filepath}'")

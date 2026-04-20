@@ -179,7 +179,7 @@ def main(args=None):
     os.makedirs(output_path, exist_ok=True)
 
     # write meta file
-    create_or_update_creation_metafile(output_path)
+    create_or_update_creation_metafile(output_path, prepare_args=vars(args))
 
     # process files
     # see: https://github.com/jmccormac/pySceneNetRGBD/blob/master/convert_instance2class.py

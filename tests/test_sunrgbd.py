@@ -27,8 +27,9 @@ def test_dataset(split, depth_mode):
     dataset = SUNRGBD(
         dataset_path=DATASET_PATH_DICT['sunrgbd'],
         split=split,
+        sample_keys=SUNRGBD.get_available_sample_keys(split),
         depth_mode=depth_mode,
-        sample_keys=SUNRGBD.get_available_sample_keys(split)
+        instances_version='detect'
     )
 
     assert dataset.depth_mode == depth_mode
@@ -88,7 +89,12 @@ def test_dataset(split, depth_mode):
             # Assert that the encoding is in radians
             assert 0 <= value <= 2*np.pi
         # 3d boxes
-        assert isinstance(sample['3d_boxes'], list)
+        if 'panopticndt' == dataset.instances_version:
+            # new format
+            assert isinstance(sample['3d_boxes'], list)
+        else:
+            # old format
+            assert isinstance(sample['3d_boxes'], dict)
 
         if i >= 9:
             break
@@ -103,6 +109,7 @@ def test_scene_class_mapping(split):
         dataset_path=DATASET_PATH_DICT['sunrgbd'],
         split=split,
         sample_keys=sample_keys,
+        instances_version='detect',
         scene_use_indoor_domestic_labels=False
     )
 
@@ -110,6 +117,7 @@ def test_scene_class_mapping(split):
         dataset_path=DATASET_PATH_DICT['sunrgbd'],
         split=split,
         sample_keys=sample_keys,
+        instances_version='detect',
         scene_use_indoor_domestic_labels=True
     )
 
@@ -150,7 +158,8 @@ def test_filter_camera(split):
         dataset_path=DATASET_PATH_DICT['sunrgbd'],
         split=split,
         sample_keys=SUNRGBD.get_available_sample_keys(split),
-        cameras=cameras
+        cameras=cameras,
+        instances_version='detect'
     )
 
     assert dataset.cameras == cameras

@@ -1,3 +1,7 @@
 loralib
-alpha-clip @ git+https://github.com/SunzeY/AlphaCLIP.git
+
+# patched version of AlphaCLIP that works with setuptools >= 82 and removed pkg_resources
+# for more details, see: https://github.com/SunzeY/AlphaCLIP/issues/75
+alpha-clip @ git+https://github.com/Tripton/AlphaCLIP.git
+
 gdown

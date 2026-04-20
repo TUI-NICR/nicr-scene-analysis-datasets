@@ -8,21 +8,23 @@ Currently, this packages features the following datasets and annotations:
 
 | Dataset                                                               | Updated/Tested |   Type    | Semantic | Instance |  Orientations  |  Scene   |       Normal       | 3D Boxes | Extrinsics | Intrinsics |
 |:----------------------------------------------------------------------|:--------------:|:---------:|:--------:|:--------:|:--------------:|:--------:|:------------------:|:--------:|:----------:|:----------:|
-| [ADE20k](https://ade20k.csail.mit.edu/)                                 | v081/v081      | RGB       | &#10003; | &#10003; |                | &#10003; |                    |          |            |            |
-| [COCO](https://cocodataset.org/#home)                                 | v081/v081      | RGB       | &#10003; | &#10003; |                |          |                    |          |            |            |
-| [Cityscapes](https://www.cityscapes-dataset.com/)                     | v050/v070      | RGB-D\*   | &#10003; | &#10003; |                |          |                    |          |            |            |
-| [Hypersim](https://machinelearning.apple.com/research/hypersim)       | v081/v081      | RGB-D     | &#10003; | &#10003; | (&#10003;)\*\* | &#10003; | &#10003;           | &#10003; | &#10003;   | &#10003;   |
-| [NYUv2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)     | v081/v081      | RGB-D     | &#10003; | &#10003; | &#10003;\*\*\* | &#10003; | (&#10003;)\*\*\*\* |          |            |            |
-| [ScanNet](http://www.scan-net.org/)                                   | v081/v081      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          | &#10003;   | &#10003;   |
-| [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet-rgbd.html)  | v054/v070      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          |            |            |
-| [SUNRGB-D](https://rgbd.cs.princeton.edu/)                            | v081/v081      | RGB-D     | &#10003; | &#10003; |   &#10003;     | &#10003; |                    | &#10003; | &#10003;   | &#10003;   |
+| [ADE20k](https://ade20k.csail.mit.edu/)                               | v081/v090      | RGB       | &#10003; | &#10003; |                | &#10003; |                    |          |            |            |
+| [COCO](https://cocodataset.org/#home)                                 | v081/v090      | RGB       | &#10003; | &#10003; |                |          |                    |          |            |            |
+| [Cityscapes](https://www.cityscapes-dataset.com/)                     | v050/v090      | RGB-D\*   | &#10003; | &#10003; |                |          |                    |          |            |            |
+| [Hypersim](https://machinelearning.apple.com/research/hypersim)       | v090/v090      | RGB-D     | &#10003; | &#10003; | (&#10003;)\*\* | &#10003; | &#10003;           | &#10003; | &#10003;   | &#10003;   |
+| [NYUv2](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)     | v081/v090      | RGB-D     | &#10003; | &#10003; | &#10003;\*\*\* | &#10003; | (&#10003;)\*\*\*\* |          |            |            |
+| [ScanNet](http://www.scan-net.org/)                                   | v081/v090      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          | &#10003;   | &#10003;   |
+| [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet-rgbd.html)  | v054/v090      | RGB-D     | &#10003; | &#10003; |                | &#10003; |                    |          |            |            |
+| [SUNRGB-D](https://rgbd.cs.princeton.edu/)                            | v081/v090      | RGB-D     | &#10003; | &#10003; |   &#10003;     | &#10003; |                    | &#10003; | &#10003;   | &#10003;   |
 
 \* Both depth and disparity are available.  
 \*\* Orientations are available but not consistent for instances within a semantic class (see [Hypersim](nicr_scene_analysis_datasets/datasets/hypersim)).  
 \*\*\* Annotated by hand in 3D for instances of some relevant semantic classes.  
-\*\*\*\* As of Nov 2022, [precomputed normals](https://cs.nyu.edu/~deigen/dnl/normals_gt.tgz) are not publicly available any longer. We are trying to reach the authors.  
+\*\*\*\* As of Nov 2022, [precomputed normals](https://cs.nyu.edu/~deigen/dnl/normals_gt.tgz) are not publicly available any longer. However, you can still use 
+[Wayback Machine](https://web.archive.org/web/20220412033406/https://cs.nyu.edu/~deigen/dnl/normals_gt.tgz) to download 
+the required file.
 
-> Note that for every dataset, starting with version 0.8.1 auxiliary data such as synthetic depth images, rgb image embeddings, and panoptic embeddings (by combining semantic and instance annotations) can be generated.
+> Note that for every dataset, starting with version 0.8.1 auxiliary data such as synthetic depth images, rgb image embeddings, and panoptic embeddings (by combining semantic and instance annotations) can be generated. 
 Therefore, each dataset must be prepared individually before.
 Afterwards, the auxiliary data can be generated by using the `nicr_sa_generate_auxiliary_data` command line entry point.
 
@@ -33,22 +35,25 @@ The source code is published under Apache 2.0 license, see [license file](LICENS
 If you use the source code, please cite the paper related to your work:
 
 ---
-**Efficient Prediction of Dense Visual Embeddings via Distillation and RGB-D Transformers** (Accepted at IROS 2025):
+**Efficient Prediction of Dense Visual Embeddings via Distillation and RGB-D Transformers** ([IEEE Xplore](https://ieeexplore.ieee.org/document/11245809), [arXiv](https://arxiv.org/abs/2601.00359)):
+
 > Fischedick, S., Seichter, D., Stephan, B., Schmidt, R., Gross, H.-M.
-*Efficient Prediction of Dense Visual Embeddings via Distillation and RGB-D Transformers*,
-accepted at IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2025.
+*Efficient Prediction of Dense Visual Embeddings via Distillation and RGB-D Transformers*, in
+IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pp. 2400-2407, 2025.
 
 <details>
 <summary>BibTeX</summary>
 
 ```bibtex
-@inproceedings{dveformer2025iros,
+@inproceedings{dveformer2025iros,  
   title     = {{Efficient Prediction of Dense Visual Embeddings via Distillation and RGB-D Transformers}},
   author    = {Fischedick, S{\"o}hnke and Seichter, Daniel and Stephan, Benedict and Schmidt, Robin and Gross, Horst-Michael},
-  booktitle = {Accepted at IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+  booktitle = {IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+  pages     = {2400-2407},
   year      = {2025}
 }
 ```
+
 </details>
 
 ---
@@ -197,13 +202,13 @@ python -m pip install -e "./"
 
 Please follow the instructions given in the respective dataset folder to prepare the datasets.
 
-- [Cityscapes](nicr_scene_analysis_datasets/datasets/cityscapes)
-- [COCO](nicr_scene_analysis_datasets/datasets/coco)
-- [Hypersim](nicr_scene_analysis_datasets/datasets/hypersim)
-- [NYUv2](nicr_scene_analysis_datasets/datasets/nyuv2)
-- [ScanNet](nicr_scene_analysis_datasets/datasets/scannet)
-- [SceneNet RGB-D](nicr_scene_analysis_datasets/datasets/scenenetrgbd)
-- [SUNRGB-D](nicr_scene_analysis_datasets/datasets/sunrgbd)
+- [Cityscapes](src/nicr_scene_analysis_datasets/datasets/cityscapes)
+- [COCO](src/nicr_scene_analysis_datasets/datasets/coco)
+- [Hypersim](src/nicr_scene_analysis_datasets/datasets/hypersim)
+- [NYUv2](src/nicr_scene_analysis_datasets/datasets/nyuv2)
+- [ScanNet](src/nicr_scene_analysis_datasets/datasets/scannet)
+- [SceneNet RGB-D](src/nicr_scene_analysis_datasets/datasets/scenenetrgbd)
+- [SUNRGB-D](src/nicr_scene_analysis_datasets/datasets/sunrgbd)
 
 
 ## Usage
@@ -317,32 +322,97 @@ chained_mapper = nicr_d2.NICRChainedDatasetMapper(
     [data_mapper, panoptic_mapper]
 )
 ```
+
 For further details, we refer to the usage in our [EMSANet repository](https://github.com/TUI-NICR/EMSANet/blob/main/external).
 
 The dataset can be used as an iterator (detectron2 usually does this) and can then be mapped with the custom mappers to generate the correct layout of the data.
 
 ## Changelog
 
+**Version 0.9.0 (Apr 20, 2026)**
+- ADE20k:
+  - fix skipped cleanup of temporary files
+- Hypersim: *minor changes in data*:
+  - fix some warnings (an additional cast in OpenCv and some rare Nans to zeros) in Hypersim preparation
+    (note that these changes do change the actual prepared dataset)
+  - ignore invalid (zero-depth) points during tilt-shift reprojection to avoid collisions at uv=(0, 0)
+  - newer SciPy versions (tested: 1.16.2) unveiled that the camera orientations provided by the hypersim authors for 
+    some first frames (e.g., 'ai_008_003/cam_01/0000' and 'ai_046_001/cam_00/0000') in the training split 
+    are not valid rotation matrices (note that this does not affect any of our reported results, as we did not use 
+    the training split for mapping)
+  - adjust RGB tonemapping to align outputs with dataset versions generated using older NumPy releases by 
+    introducing a stable percentile computation, restoring the original float32 scaling path, and evaluating 
+    the power step in float64 for reproducibility.
+- NYUv2:
+  - update note for NYUv2 normals and point to 
+    [Wayback Machine](https://web.archive.org/web/20220412033406/https://cs.nyu.edu/~deigen/dnl/normals_gt.tgz) as 
+    alternative download link
+- SUNRGB-D: 
+  - fix preparation of old version with EMSANet instances (fix missing package ressources and remove outdated colored 
+    segmentations)
+  - fix tests for SUNRGB-D EMSANet version
+  - fix writing the instances version to creation meta file
+  - add 'dectect' as instances version for loading an existing SUNRGB-D datasets and detecting the instances version 
+    automatically based on creation meta file (must be present)
+- merge multiple creation meta entries on load (covers datasets created in multiple steps)
+- add a static creation meta accessor for meta lookup without instantiating datasets
+- centralize auxiliary data meta lookups on the merged creation meta
+- fix deviating results for scipy.spatial.transform.Rotation.from_matrix in version 1.15.2+ (see alert below)
+- fix naming issues in panoptic-embedding extraction for datasets with multiple semantic class spectra  
+- dump full argparser args when invoking dataset preparation or auxiliary data generation scripts
+- add test script `test_datasets.sh` to run prepare and test all datasets (initial public release)
+- update and refactor dataset preparation instructions for all datasets
+  (IMPORTANT: for ScanNet, we unified the argument order, i.e., now source data path comes AFTER output path.)
+- fix `--recursive` in `nicr_sa_semantic_instance_viewer` and `nicr_sa_depth_viewer`
+- fix broken links to datasets in this README.md
+- replace pkg_resources with importlib.resources (pkg_resources is deprecated)
+- set default test version to python 3.12 (ubuntu 24.04 default)
+- update DVEFormer citation
+
+> [!CAUTION]
+> Starting with SciPy 1.15.2, the behavior of scipy.spatial.Rotation.from_matrix has changed. 
+If the given input matrix is not perfectly (they are testing with atol=1e-12 !!) orthogonal 
+(mat^T*mat = 1), an approximation using orthogonal Procrustes projection (basically SVD) is created.
+Afterward, the matrix is converted to quaternions. These quaternions are normalized, and serve as an internal
+representation in the Rotation object.
+In versions earlier than 1.15.2, no such orthogonalization step was performed; only the quaternion 
+normalization compensated slightly for non-orthogonal input matrices.  
+While the new handling is probably mathematically more correct and stable (this change makes sense
+in general), it also has a huge impact on our existing pipelines in terms of both results and
+runtime. Rotation matrices (especially from estimated extrinsics) are often not perfectly
+orthogonal and, thus, will be silently modified by this new behavior.  
+As of 2026-01-08, there is no way to enforce the old behavior in SciPy >= 1.15.2. The upcoming
+SciPy 1.17.0 (currently RC2) will introduce a keyword argument `assume_valid` with default value
+False, mainly to skip the expensive orthogonalization step, but at the same time enabling the
+old behavior. However, as the argument is unknown in previous versions, simply passing
+`assume_valid=True` will break older environments.  
+Therefore, we implement the old `from_matrix` behavior for 1.15.2 <= SciPy < 1.17.0 in a separate 
+class, and use the official implementation for >= 1.17.0. The resulting class 
+`nicr_scene_analysis_datasets.utils.rotation.PatchedSciPyRotation` can be used as drop-in 
+replacement for `scipy.spatial.transform.Rotation`.
+References: https://github.com/scipy/scipy/issues/22417, https://github.com/scipy/scipy/pull/22418, 
+https://github.com/scipy/scipy/pull/24092
+
 **Version 0.8.3 (Oct 11, 2025)**
 - *no dataset preparation related changes*
-- switch from from flat to src layout
-- transition from setup.py to pyproject.toml for packaging (note that this means we are no longer able to detect
+- switch from flat to src layout
+- transition from setup.py to pyproject.toml for packaging (note that this means we are no longer able to detect 
   whether opencv and/or torch are installed, instead this check is now done at runtime)
 - use ruff for linting
 - remove Python 3.6 at all, do not test for Python 3.11 anymore, add testing for Python 3.12
 
 **Version 0.8.2 (Oct 6, 2025)**
 - *no dataset preparation related changes*
-- removed `semantic_n_classes` argument from ADE20k to be consistent with other datasets and `_AuxiliaryDataWrapper`
-- renamed `compute_embeddings` to `compute_mean_visual_embeddings` for better transparency
+- remove `semantic_n_classes` argument from ADE20k to be consistent with other datasets and `_AuxiliaryDataWrapper`
+- rename `compute_embeddings` to `compute_mean_visual_embeddings` for better transparency
 - ensure that `_load_panoptic_embedding` returns panoptic ids as integers instead of strings
 
 **Version 0.8.1 (Sep 15, 2025)**
-- add new entrypoint `nicr_sa_generate_auxiliary_data` for generating auxiliary
+- add new entrypoint `nicr_sa_generate_auxiliary_data` for generating auxiliary 
   data such as depth images or rgb embeddings and panoptic embeddings (by combining semantic and instance annotations)
 - add new `_AuxiliaryDataWrapper` class to wrap any exisiting dataset to support the
   usage of auxiliary data
-- added 'with_auxiliary_data' argument to `get_dataset` function to enable
+- add 'with_auxiliary_data' argument to `get_dataset` function to enable
   loading of auxiliary data
 
 **Version 0.8.0 (Nov 27, 2024)**
@@ -357,7 +427,7 @@ The dataset can be used as an iterator (detectron2 usually does this) and can th
 - fix link to NYUv2 dataset
 - `depth_mode` in `DepthDataset` is no longer an abstract property
 - store dataset_path in `DatasetBase`, add read-only property `dataset_path`
-- add `debug_print` to `DatasetBase` to print debug information, some minor
+- add `debug_print` to `DatasetBase` to print debug information, some minor 
   fixes with `_disable_prints`
 - add `_get_filename` to `DatasetBase` to get the filename of a sample by index
 
@@ -365,21 +435,21 @@ The dataset can be used as an iterator (detectron2 usually does this) and can th
 - allow extracting both instance annotation versions for SUNRGB-D with a
   single version of the dataset package: 'emsanet' and 'panopticndt', use
   'emsanet' to reproduce results reported in EMSANet or EMSAFormer paper, and
-  'panopticndt' for follow-up papers
+  'panopticndt' for follow-up papers 
 - fix for missing creation meta files
 - NYUv2: do not create outdated `class_names_*.txt` and `class_colors_*.txt`
   files anymore
 
 **Version 0.6.1 (Dec 5, 2023)**
 - force 'instance' sample key to always be of dtype uint16
-- force 'semantic' sample key to always be of dtype uint8 (i.e., for Cityscapes,
-  COCO, Hypersim, NYUv2 (13+40 classes), ScanNet (20, 40, 200), SceneNet RGB-D
+- force 'semantic' sample key to always be of dtype uint8 (i.e., for Cityscapes, 
+  COCO, Hypersim, NYUv2 (13+40 classes), ScanNet (20, 40, 200), SceneNet RGB-D 
   and SUNRGB-D) or uint16 (i.e., for NYUv2 (894 classes), ScanNet (549 classes))
 - add test to verify the dtypes of each dataset
 - remove 'semantic_n_classes' argument from SceneNet RGB-D and set it to '13'
-- fix version format and parsing to be PEP440 compliant (required for more
+- fix version format and parsing to be PEP440 compliant (required for more 
   recent packaging versions)
-- fix `--max-z-value` in `nicr_sa_labeled_pc_viewer` to work with additionally
+- fix `--max-z-value` in `nicr_sa_labeled_pc_viewer` to work with additionally 
   given label files (`*-label-filepath`) as well
 - this version was an internal release only
 
@@ -395,7 +465,8 @@ The dataset can be used as an iterator (detectron2 usually does this) and can th
       the dataset as *SUNRGB-D (PanopticNDT version)* and to previous versions
       with instance information as *SUNRGB-D (EMSANet version)*
   - **note, version 0.6.0 is NOT compatible with previous versions, you will
-    get deviating results when applying EMSANet or EMSAFormer**
+    get deviating results when applying EMSANet or EMSAFormer** (see 0.7.0 
+    above)
 - Hypersim:
   - add more notes/comments for blacklisted scenes/camera trajectories
   - do not use orientations by default (annotations provided by the dataset are

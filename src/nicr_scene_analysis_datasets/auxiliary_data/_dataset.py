@@ -2,7 +2,7 @@
 """
 .. codeauthor:: Soehnke Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
 """
-from typing import Tuple, Optional
+from typing import Dict, Tuple, Optional
 
 import dataclasses
 import os
@@ -16,7 +16,6 @@ from ..dataset_base import DatasetBase
 from ..dataset_base import DepthDataset
 from ..dataset_base import DepthStats
 from ..dataset_base._annotation import PanopticEmbeddingDict
-from ..utils.io import load_creation_metafile
 
 
 def normalize_embedding(embedding: np.ndarray) -> np.ndarray:
@@ -90,8 +89,8 @@ class _AuxiliaryDataset(DatasetBase):
             )
 
         # extend available depth estimators and stats from auxiliary meta
-        auxiliary_depth_stats = _AuxiliaryDataset.get_key_from_creation_metafile(
-            'auxiliary_depth_stats', dataset_path
+        auxiliary_depth_stats = self.additional_creation_meta.get(
+            'auxiliary_depth_stats'
         )
         available_depth_stats = {}
         if auxiliary_depth_stats is not None:
@@ -122,8 +121,8 @@ class _AuxiliaryDataset(DatasetBase):
         # Try to load the reference text embeddings for scene classes
         self.scene_text_embedding_list = []
         self._auxiliary_scene_class_name_embeddings_path = \
-            _AuxiliaryDataset.get_key_from_creation_metafile(
-                'auxiliary_scene_class_name_embeddings', dataset_path
+            self.additional_creation_meta.get(
+                'auxiliary_scene_class_name_embeddings'
             )
         if self._auxiliary_scene_class_name_embeddings_path is not None and\
            self._image_embedding_estimator is not None:
@@ -172,8 +171,8 @@ class _AuxiliaryDataset(DatasetBase):
         # Try to load the reference text embeddings for semantic classes
         self.semantic_text_embedding_list = []
         self._auxiliary_semantic_class_name_embeddings_path = \
-            _AuxiliaryDataset.get_key_from_creation_metafile(
-                'auxiliary_semantic_class_name_embeddings', dataset_path
+            self.additional_creation_meta.get(
+                'auxiliary_semantic_class_name_embeddings'
             )
         if self._auxiliary_semantic_class_name_embeddings_path is not None and \
            self._panoptic_embedding_estimator is not None:
@@ -267,6 +266,15 @@ class _AuxiliaryDataset(DatasetBase):
                     = np.zeros_like(text_embedding) + 1e-9
 
     @property
+    def additional_creation_meta(self) -> Dict:
+        if self.creation_meta is None:
+            return {}
+        additional_meta = self.creation_meta.get('additional_meta')
+        if not isinstance(additional_meta, dict):
+            return {}
+        return additional_meta
+
+    @property
     def config(self):
         original_config = super().config
         if self.use_depth_estimator():
@@ -299,48 +307,13 @@ class _AuxiliaryDataset(DatasetBase):
 
     @staticmethod
     def get_key_from_creation_metafile(key, dataset_path):
-        if dataset_path is None:
+        meta = DatasetBase.get_creation_meta_static(dataset_path)
+        if not meta:
             return None
-        meta_list = load_creation_metafile(dataset_path)
-        assert isinstance(meta_list, list)
-
-        # Collect all values for the requested key from additional_meta entries
-        key_values = []
-        for meta in meta_list:
-            add_meta = meta.get('additional_meta')
-            if add_meta is not None and key in add_meta:
-                key_values.append(add_meta[key])
-
-        if not key_values:
+        additional_meta = meta.get('additional_meta')
+        if not isinstance(additional_meta, dict):
             return None
-
-        # If only one value or all values are non-dict, return the last one
-        # as this is the most recent value.
-        if (
-            len(key_values) == 1 or
-            not any(isinstance(v, dict) for v in key_values)
-        ):
-            return key_values[-1]
-
-        # Merge dictionary values recursively, non-dict values are overridden
-        def merge_dicts(d1, d2):
-            result = d1.copy()
-            for k, v in d2.items():
-                if (
-                    k in result and isinstance(result[k], dict) and
-                    isinstance(v, dict)
-                ):
-                    result[k] = merge_dicts(result[k], v)
-                else:
-                    result[k] = v
-            return result
-
-        # Handle dictionaries
-        merged_result = {}
-        for value in key_values:
-            merged_result = merge_dicts(merged_result, value)
-
-        return merged_result
+        return additional_meta.get(key)
 
     @staticmethod
     def get_available_sample_keys(split, dataset_path=None) -> Tuple[str]:

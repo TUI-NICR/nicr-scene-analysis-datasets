@@ -29,11 +29,11 @@ class Hypersim(HypersimMeta, RGBDDataset):
         *,
         dataset_path: Optional[str] = None,
         split: str = 'train',
-        subsample: Optional[int] = None,
         sample_keys: Tuple[str] = ('rgb', 'depth', 'semantic'),
         use_cache: bool = False,
         cameras: Optional[Tuple[str]] = None,
         depth_mode: str = 'raw',
+        subsample: Optional[int] = None,
         orientations_use: bool = False,
         scene_use_indoor_domestic_labels: bool = False,
         **kwargs: Any

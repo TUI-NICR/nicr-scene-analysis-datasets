@@ -65,12 +65,13 @@ class DatasetBase(abc.ABC):
 
         # load creation meta
         if self._dataset_path is not None:
-            self._creation_meta = load_creation_metafile(self._dataset_path)
-            if self._creation_meta is None:
+            self._creation_metas = load_creation_metafile(self._dataset_path)
+            if self._creation_metas is None:
                 warnings.warn(f"No creation meta file found at: "
                               f"'{dataset_path}'.")
         else:
-            self._creation_meta = None
+            self._creation_metas = None
+        self._creation_metas_merged = None
 
         # Note:
         # 'auto_register_sample_key_loaders' should NOT be called here as it
@@ -118,12 +119,66 @@ class DatasetBase(abc.ABC):
 
     @property
     def creation_meta(self) -> Union[None, Dict]:
-        # we may have multiple entries in the meta file, so we take the last
-        # one, see create_or_update_creation_metafile()
-        if self._creation_meta is not None:
-            return self._creation_meta[-1]
+        if self._creation_metas is None:
+            return None
 
-        return None
+        if self._creation_metas_merged is None:
+            # Creation meta can be a list of steps (e.g., preparation then
+            # auxiliary generation). Merge lazily so earlier info (like
+            # SUNRGB-D instance version) is not lost by taking only the last
+            # entry, while newer keys still override older ones.
+            if isinstance(self._creation_metas, list):
+                self._creation_metas_merged = \
+                    self._merge_creation_meta_list(self._creation_metas)
+            else:
+                self._creation_metas_merged = self._creation_metas
+
+        return self._creation_metas_merged
+
+    @staticmethod
+    def _merge_dicts(d1: Dict, d2: Dict) -> Dict:
+        result = d1.copy()
+        for key, value in d2.items():
+            if value is None and isinstance(result.get(key), dict):
+                continue
+            if (
+                key in result and isinstance(result[key], dict) and
+                isinstance(value, dict)
+            ):
+                result[key] = DatasetBase._merge_dicts(result[key], value)
+            else:
+                result[key] = value
+        return result
+
+    @staticmethod
+    def _merge_creation_meta_list(meta_list: List[Dict]) -> Union[None, Dict]:
+        if not meta_list:
+            return None
+
+        merged_meta = {}
+        for meta in meta_list:
+            if not isinstance(meta, dict):
+                continue
+            merged_meta = DatasetBase._merge_dicts(merged_meta, meta)
+
+        return merged_meta or None
+
+    @staticmethod
+    def get_creation_meta_static(
+        dataset_path: Optional[str]
+    ) -> Union[None, Dict]:
+        if dataset_path is None:
+            return None
+
+        meta_list = load_creation_metafile(dataset_path)
+        if meta_list is None:
+            return None
+
+        if isinstance(meta_list, list):
+            return DatasetBase._merge_creation_meta_list(meta_list)
+
+        return meta_list
+
 
     @property
     def use_cache(self) -> bool:
