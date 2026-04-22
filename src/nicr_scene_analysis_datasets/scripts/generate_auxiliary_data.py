@@ -821,7 +821,7 @@ def main(args=None) -> None:
             relative_npy_file_path
 
     create_or_update_creation_metafile(
-        dataset_path=args.dataset_path,
+        dataset_basepath=args.dataset_path,
         generate_auxiliary_args=vars(args),
         **auxiliary_meta
     )
