@@ -131,3 +131,6 @@ results
 .vscode
 
 stuff/hypersim_instance_semantic_overlaps/hypersim_instances
+test/
+ade20k_test/
+stuff/ade20k/index_ade20k.pkl

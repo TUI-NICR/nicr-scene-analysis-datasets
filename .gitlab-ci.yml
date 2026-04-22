@@ -33,28 +33,26 @@ stages:
         - conda install -q pytest pytest-cov
         - python -m pip install -q pytest-html
 
-        # pytorch and detectron
+        # pytorch and detectron2
         - |
-          if [ "${PYTHON_VERSION_TO_USE}" == "3.6" ]; then
-              conda install pytorch=1.10.1 torchvision=0.11.2 cpuonly -c pytorch
-              python -m pip install detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cpu/torch1.10/index.html
-          elif [ "${PYTHON_VERSION_TO_USE}" == "3.8" ]; then
-              # EMSANet
-              conda install pytorch=1.13.0 torchvision=0.14.0 cpuonly -c pytorch
-              python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
+          if [ "${PYTHON_VERSION_TO_USE}" == "3.8" ]; then
+            # torch 2.4.1 was the last version for Python 3.8
+            python -m pip install torch==2.4.1 torchvision==0.19.1 --index-url https://download.pytorch.org/whl/cpu
+            python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
           else
-              conda install pytorch=2.0.1 torchvision=0.15.2 cpuonly -c pytorch
-              python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
+            python -m pip install torch==2.10.0 torchvision==0.25.0 --index-url https://download.pytorch.org/whl/cpu
+            python -m pip install --no-build-isolation 'git+https://github.com/facebookresearch/detectron2.git'
           fi
 
-        # panopticapi
-        - pip install git+https://github.com/cocodataset/panopticapi.git
         # check conda installation
         - conda info
         - conda list
 
+        # the home folder is relatively small, so for large checkpoints, we need to use a different folder
+        - export DEFAULT_CACHE_BASEPATH=/local/.cache/
+
         # install package (and all missing dependencies)
-        - python -m pip install -q --editable .[test]
+        - python -m pip install -q --editable .[withopencv,test]
 
         # test package (opt: get coverage)
         - |
@@ -70,6 +68,61 @@ stages:
             - report_py${PYTHON_VERSION_TO_USE//./}.html
             - htmlcov
 
+.test_dataset_template: &test_dataset_template
+    <<: *conda_env
+    stage: test
+    rules:
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+          when: manual
+    variables:
+        GIT_SUBMODULE_STRATEGY: recursive
+        DATASET_PATH: /local/test_location_for_nicr_scene_analysis_datasets
+    script:
+        # for debugging, list all environment variables
+        # - export
+
+        # install packages (use conda to avoid time-consuming installations)
+        - conda install -q pytest
+
+        # pytorch and detectron2
+        - |
+          if [ "${PYTHON_VERSION_TO_USE}" == "3.8" ]; then
+            # torch 2.4.1 was the last version for Python 3.8
+            python -m pip install torch==2.4.1 torchvision==0.19.1 --index-url https://download.pytorch.org/whl/cpu
+            python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
+          else
+            python -m pip install torch==2.10.0 torchvision==0.25.0 --index-url https://download.pytorch.org/whl/cpu
+            python -m pip install --no-build-isolation 'git+https://github.com/facebookresearch/detectron2.git'
+          fi
+
+        # check conda installation
+        - conda info
+        - conda list
+
+        # the home folder is relatively small, so for large checkpoints, we need to use a different folder
+        - export DEFAULT_CACHE_BASEPATH=/local/.cache/
+
+        # install package (and all missing dependencies)
+        - python -m pip install -q --editable .[withopencv,withpreparation,withauxiliarydata,test]
+
+        # run test
+        - OUTPUT_PATH="${DATASET_PATH}"
+        - FORCE_RECREATE=true
+        - RUN_TESTS=true
+        - RUN_COMPARISONS=true
+        - CLEAN_UP=true
+        - cd tests
+        - source test_datasets.sh
+
+        - ${TEST_TO_RUN}
+
+    after_script:
+        - echo "Cleaning up ${DATASET_PATH}"
+        - rm -rf "${DATASET_PATH}"
+        - !reference [.conda_env, after_script]
+
 style_check:
     <<: *conda_env
     stage: stylecheck
@@ -78,28 +131,19 @@ style_check:
         - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
         - if: $CI_PIPELINE_SOURCE == "schedule"
     variables:
-        PYTHON_VERSION_TO_USE: "3.6"     # ubuntu 18.04 / jetson default
+        PYTHON_VERSION_TO_USE: "3.12"     # ubuntu24 default
     script:
         # install packages
-        - conda install -q pycodestyle pylint
+        - python -m pip install ruff
 
-        # check style using pep8
-        - find ./ -name "*.py" -not -path "*/stuff/*" | xargs pycodestyle --show-source --show-pep8
-
-        # check style using pylint (without taking into account)
-        - pylint ${CI_PROJECT_NAME//-/_} --rcfile=${CI_PROJECT_DIR}/.pylintrc || true
-
-# tests_py36:    # ubuntu18
-#     <<: *test_template
-#     variables:
-#         PYTHON_VERSION_TO_USE: "3.6"
-#         REPORT_COVERAGE: "false"
+        # run style check
+        - ruff check .
 
 tests_py38:    # ubuntu20
     <<: *test_template
     variables:
         PYTHON_VERSION_TO_USE: "3.8"
-        REPORT_COVERAGE: "true"
+        REPORT_COVERAGE: "false"
 
 tests_py310:    # ubuntu22
     <<: *test_template
@@ -107,13 +151,39 @@ tests_py310:    # ubuntu22
         PYTHON_VERSION_TO_USE: "3.10"
         REPORT_COVERAGE: "false"
 
-tests_py311:    # current
+tests_py312:    # ubuntu24
     <<: *test_template
     variables:
-        PYTHON_VERSION_TO_USE: "3.11"
-        REPORT_COVERAGE: "false"
+        PYTHON_VERSION_TO_USE: "3.12"
+        REPORT_COVERAGE: "true"
+
+test_dataset:
+    <<: *test_dataset_template
+    parallel:
+        matrix:
+        - PYTHON_VERSION_TO_USE: [ "3.12" ]
+          TEST_TO_RUN:
+          # datasets and versions
+          - test_ade20k
+          - test_cityscapes
+          - test_coco
+          - test_hypersim  # all hypersim versions
+          - test_hypersim_tilt_shift
+          - test_hypersim_no_tilt_shift
+          - test_nyuv2
+          - test_scannet
+          - test_scenenet_rgbd
+          - test_sunrgbd  # all sunrgbd versions
+          - test_sunrgbd_emsanet
+          - test_sunrgbd_panopticndt
+          # auxiliary_data
+          - test_nyuv2_with_auxiliary_data
+          # mapping
+          - test_mapping_hypersim
+          - test_mapping_scannet
 
 update_pip_package:
+    <<: *conda_env
     stage: deploy
     rules:
         - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -121,13 +191,16 @@ update_pip_package:
         - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
         - if: $CI_PIPELINE_SOURCE == "merge_request_event"
           when: manual
+    variables:
+        PYTHON_VERSION_TO_USE: "3.12"     # ubuntu24 default
     script:
-        - pip install twine
+        - python -m pip install twine>=5.0.0 pkginfo>=1.10.0
 
         # build package
-        - python setup.py sdist bdist_wheel
+        - python -m pip install build
+        - python -m build --sdist --wheel
 
         # upload package
         - export TWINE_USERNAME=${TWINE_USERNAME}
         - export TWINE_PASSWORD=${TWINE_PASSWORD}
-        - python -m twine upload --skip-existing --repository-url ${CI_API_V4_URL}/projects/${PACKAGE_REGISTRY}/packages/pypi dist/*
+        - python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${PACKAGE_REGISTRY}/packages/pypi dist/*

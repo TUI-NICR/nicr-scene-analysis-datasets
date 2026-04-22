@@ -9,22 +9,22 @@ For more details, see: [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet
     ```bash
     # see: https://robotvault.bitbucket.io/scenenet-rgbd.html
 
-    SCENENETRGBD_DOWNLOAD_DIR="/path/where/to/store/scenenetrgbd_dowloads"
+    SCENENETRGBD_DOWNLOAD_PATH="/path/where/to/store/scenenetrgbd_dowloads"
 
     # train
-    wget https://www.doc.ic.ac.uk/~bjm113/scenenet_data/SceneNet-train.tar.gz -P ${SCENENETRGBD_DOWNLOAD_DIR}   # -> 263GB
-    wget https://www.doc.ic.ac.uk/~bjm113/scenenet_data/train_protobufs.tar.gz -P ${SCENENETRGBD_DOWNLOAD_DIR}    # -> 323MB
+    wget https://www.doc.ic.ac.uk/~bjm113/scenenet_data/SceneNet-train.tar.gz -P ${SCENENETRGBD_DOWNLOAD_PATH}   # -> 263GB
+    wget https://www.doc.ic.ac.uk/~bjm113/scenenet_data/train_protobufs.tar.gz -P ${SCENENETRGBD_DOWNLOAD_PATH}    # -> 323MB
 
     # valid
-    wget http://www.doc.ic.ac.uk/~bjm113/scenenet_data/SceneNetRGBD-val.tar.gz -P ${SCENENETRGBD_DOWNLOAD_DIR}   # -> 15GB
-    wget http://www.doc.ic.ac.uk/~bjm113/scenenet_data/scenenet_rgbd_val.pb -P ${SCENENETRGBD_DOWNLOAD_DIR}   # -> 31MB
+    wget http://www.doc.ic.ac.uk/~bjm113/scenenet_data/SceneNetRGBD-val.tar.gz -P ${SCENENETRGBD_DOWNLOAD_PATH}   # -> 15GB
+    wget http://www.doc.ic.ac.uk/~bjm113/scenenet_data/scenenet_rgbd_val.pb -P ${SCENENETRGBD_DOWNLOAD_PATH}   # -> 31MB
 
     # untar files
-    find ${SCENENETRGBD_DOWNLOAD_DIR} -name '*.tar.gz' -exec tar xfvz {} \;
+    find ${SCENENETRGBD_DOWNLOAD_PATH} -name '*.tar.gz' -exec tar xfvz {} \;
 
     # move train protobuf files
-    mv ${SCENENETRGBD_DOWNLOAD_DIR}/train_protobufs/* ${SCENENETRGBD_DOWNLOAD_DIR}
-    rm -rf ${SCENENETRGBD_DOWNLOAD_DIR}/train_protobufs
+    mv ${SCENENETRGBD_DOWNLOAD_PATH}/train_protobufs/* ${SCENENETRGBD_DOWNLOAD_PATH}
+    rm -rf ${SCENENETRGBD_DOWNLOAD_PATH}/train_protobufs
     ```
 
 2. Build protobuf python source file:
@@ -41,7 +41,7 @@ For more details, see: [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet
     # - valid: 1x1000 trajectories with 300 views per trajectory -> 300,000 samples
     nicr_sa_prepare_dataset scenenetrgbd \
         /path/where/to/store/scenenetrgbd \
-        ${SCENENETRGBD_DOWNLOAD_DIR}
+        ${SCENENETRGBD_DOWNLOAD_PATH}
 
     # subsampled dataset
     # -> randomly pick 3 views from each trajectory for training
@@ -51,7 +51,7 @@ For more details, see: [SceneNet RGB-D](https://robotvault.bitbucket.io/scenenet
     # - valid: 1x1000 trajectories with 6 views per trajectory -> 6,000 samples
     nicr_sa_prepare_dataset scenenetrgbd \
         /path/where/to/store/scenenetrgbd \
-        ${SCENENETRGBD_DOWNLOAD_DIR} \
+        ${SCENENETRGBD_DOWNLOAD_PATH} \
         --n-random-views-to-include-train 3 \
         --n-random-views-to-include-valid 6  \
         --force-at-least-n-classes-in-view 4

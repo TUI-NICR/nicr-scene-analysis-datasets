@@ -15,12 +15,12 @@ import cv2
 import h5py
 import numpy as np
 import pandas as pd
-from scipy.spatial.transform import Rotation
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from ...utils.io import create_or_update_creation_metafile
 from ...utils.io import download_file
+from ...utils.rotation import PatchedSciPyRotation
 from .hypersim import HypersimMeta
 
 
@@ -138,7 +138,7 @@ def load_pc(scene_path, cam='cam_00', frame=0):
     # load extrinsic as the point cloud is given in world coordinate frame
     extrinsics = load_extrinsics(scene_path, cam, frame)
 
-    rotation = Rotation.from_quat(
+    rotation = PatchedSciPyRotation.from_quat(
         [extrinsics[q] for q in ['quat_x', 'quat_y', 'quat_z', 'quat_w']]
     )
     transform = np.eye(4)
@@ -173,6 +173,9 @@ def compute_point_cloud(scene_path, cam, frame, camera_params):
                             f'frame.{frame:04d}.depth_meters.hdf5')
     with h5py.File(filepath, 'r') as f:
         distance_img_meters = f['dataset'][:]
+
+    # in some rare cases, we have nan distances, convert them to 0
+    distance_img_meters = np.nan_to_num(distance_img_meters, nan=0.0)
 
     # camera parameters
     width_pixels = int(camera_params["settings_output_img_width"])
@@ -225,6 +228,9 @@ def load_depth_old(scene_path, cam, frame, correct_focal=True, in_mm=True):
     with h5py.File(depth_path, 'r') as f:
         depth = f['dataset'][:].astype(np.float32)
 
+    # in some rare cases, we have nan values in depth, convert them to 0
+    depth = np.nan_to_num(depth, nan=0.0)
+
     if correct_focal:
         # code from https://github.com/apple/ml-hypersim/issues/9#issuecomment-754935697
         int_width = depth.shape[1]
@@ -256,6 +262,13 @@ def load_normal(scene_path, cam, frame):
     with h5py.File(normal_path, 'r') as f:
         normal = f['dataset'][:].astype(np.float32)
 
+    # normal may contain NaNs in rare cases. Replacing them with 0.0
+    # would result in ~127 after ((normal + 1) * 127). We instead map NaNs to
+    # -1.0 so they become 0 during the uint8 casting in the code below,
+    # matching the previous implicit behavior (NaN → 0) while avoiding
+    # warnings/errors in newer NumPy versions.
+    normal = np.nan_to_num(normal, nan=-1.0)
+
     # note: every valid normal vector in the dataset is already normalized to
     # have unit length
 
@@ -281,6 +294,7 @@ def load_semantic(scene_path, cam, frame, orig_mapping=False):
 
     if not orig_mapping:
         gt[gt == -1] = 0
+    gt = gt.astype(np.uint8)
 
     return gt
 
@@ -400,7 +414,27 @@ def tonemap_image(scene_path, cam, frame):
 
         eps = 0.0001  # if the kth percentile brightness value in the unmodified image
         # is less than this, set the scale to 0.0 to avoid divide-by-zero
-        brightness_nth_percentile_current = np.percentile(brightness_valid, percentile)
+
+
+        # In previous releases we used:
+        # brightness_p = np.percentile(brightness_valid, percentile)
+        #
+        # Starting with NumPy 2.0, the default sorting implementation used
+        # internally by percentile/quantile may choose different (faster) code
+        # paths which can lead to slightly different results compared to NumPy
+        # 1.26.x. Release notes mention this class of changes for unstable
+        # sorting methods. See:
+        # https://numpy.org/devdocs/release/2.0.0-notes.html
+        #
+        # We therefore compute the percentile explicitly using a stable sort
+        # and a fixed "linear" interpolation rule to match our previous
+        # reproducible outputs.
+        n_valid_brightness = len(brightness_valid)
+        idx = (percentile / 100) * (n_valid_brightness - 1)
+        brightness_valid_stable = np.sort(brightness_valid, kind='stable')
+        brightness_nth_percentile_current = np.interp(
+            idx, np.arange(n_valid_brightness), brightness_valid_stable
+        )
 
         if brightness_nth_percentile_current < eps:
             scale = 0.0
@@ -417,7 +451,26 @@ def tonemap_image(scene_path, cam, frame):
 
             scale = np.power(brightness_nth_percentile_desired, inv_gamma) / brightness_nth_percentile_current
 
-    rgb_color_tm = np.power(np.maximum(scale * rgb_color, 0), gamma)
+    # NumPy 2.0 introduced NEP-50 type promotion rules. In NumPy 1.x,
+    # (float64 scalar) * (float32 array) yielded float32, while in 2.0 this
+    # promotes to float64. This changes intermediate precision in the
+    # tonemapping pipeline and can lead to pixel-level differences after
+    # the final uint8 cast.
+    #
+    # Additionally, NumPy 1.24 introduced new SIMD code paths that slightly
+    # changed the behavior of np.power compared to our original NumPy 1.21.5
+    # dataset builds.
+    #
+    # To preserve reproducibility across dataset versions:
+    # - `scale` is explicitly cast to float32 to retain the original 1.x
+    #   multiplication behavior.
+    # - `np.power` is evaluated in float64 to better match the initial dataset
+    #   releases.
+    rgb_color_tm = np.power(
+        np.maximum(np.float32(scale) * rgb_color, 0),
+        gamma,
+        dtype=np.float64
+    )
 
     # clip image?
     rgb = (np.clip(rgb_color_tm, 0, 1) * 255).astype(np.uint8)
@@ -428,7 +481,11 @@ def tonemap_image(scene_path, cam, frame):
 def load_extrinsics(scene_path, cam, frame):
     # changed in v051:
     # apply 180 degree rotation around x-axis, i.e., flipping y-axis and z-axis
-    constant_rot = Rotation.from_euler('zyx', [0, 0, 180], degrees=True)
+    # note for a single rotation: 'ZYX' (intrinsic rotation) is equivalent to
+    # 'zyx' (extrinsic rotation)
+    constant_rot = PatchedSciPyRotation.from_euler(
+        'zyx', [0, 0, 180], degrees=True
+    )
 
     # translation
     assets_to_meters_path = os.path.join(scene_path, '_detail',
@@ -446,12 +503,36 @@ def load_extrinsics(scene_path, cam, frame):
     rotation_path = os.path.join(scene_path, '_detail', cam,
                                  'camera_keyframe_orientations.hdf5')
     with h5py.File(rotation_path, 'r') as f:
-        camera_orientations = f['dataset'][frame]
-    rotation = Rotation.from_matrix(
-        np.dot(camera_orientations, constant_rot.as_matrix())
-    )
-    quat_x, quat_y, quat_z, quat_w = rotation.as_quat()
+        camera_rotation = f['dataset'][frame]
 
+    # check if rotation matrix is valid
+    # see: https://github.com/apple/ml-hypersim/issues/103
+    # NOTE:
+    # - we observed that an invalid (or slightly off) rotation matrix often
+    #   occurs for the first frame of a trajectory, i.e., ai_*_*/cam_*/0000
+    #   (69 of 769 trajectories - use the first frame with caution)
+    # - we observed an invalid rotation matrix only for: ai_008_003/cam_01/0000
+    #   (this matrix is completely off, looks like it is scaled with ~98.78)
+    # - we only report these issues but do NOT change anything to remain
+    #   backward compatibility
+    is_orthogonal = np.allclose(
+        camera_rotation @ camera_rotation.T, np.eye(3), atol=1e-5
+    )
+    has_det_one = np.isclose(np.linalg.det(camera_rotation), 1.0, atol=1e-6)
+    if not is_orthogonal or not has_det_one:
+        print(
+            "Warning: Detected invalid rotation matrix for: "
+            f"{os.path.basename(scene_path)}/{cam}/{frame:04d}:\n"
+            f"{camera_rotation}\n"
+            f"is_orthogonal: {is_orthogonal}, has_det_one: {has_det_one}.\n"
+        )
+
+    # apply constant rotation
+    rotation = PatchedSciPyRotation.from_matrix(
+        np.dot(camera_rotation, constant_rot.as_matrix()), assume_valid=True
+    )
+
+    quat_x, quat_y, quat_z, quat_w = rotation.as_quat()
     return {
         'x': camera_position[0],
         'y': camera_position[1],
@@ -500,7 +581,9 @@ def generate_split_txt_files(split_df: pd.DataFrame, destination_path,
         print(f"Created filelist: '{f_name}'")
 
 
-def _write_image(filepath, img):
+def _write_image(filepath, img, debug=False):
+    if debug:
+        print(f"Writing image to '{filepath}'")
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     if not cv2.imwrite(filepath, img, CV_WRITE_FLAGS):
         raise RuntimeError(f"Could not write image: '{filepath}'")
@@ -636,6 +719,12 @@ def process_one_sample(
         height = height_pixels    # render at same resolution
         width = width_pixels    # render at same resolution
         points_cam_flat = points_cam.reshape((-1, 3))
+
+        # remove invalid points
+        invalid_points_mask = (points_cam_flat[:, 2] == 0)
+        points_cam_flat = points_cam_flat[~invalid_points_mask]
+
+        # project to uv coordinates
         points_cam_flat_uv = points_cam_flat / points_cam_flat[:, -1:]  # z = 1
         points_cam_flat_uv = points_cam_flat_uv[:, :2]  # remove z
         points_cam_flat_uv *= np.array([[intrinsics['fx'], intrinsics['fy']]])
@@ -659,20 +748,18 @@ def process_one_sample(
         indices = indices[counts == 1]
 
         # create mapped images -------------------------------------------------
-        # TODO(dase): do not compute mapping for each sample, it is fixed for
-        # all samples of a camera trajectory (and an entire scene)
         rgb_mapped = np.zeros((height, width, 3), dtype='uint8')
         depth_mapped = np.zeros((height, width), dtype='uint16')
         normal_mapped = np.zeros((height, width, 3), dtype='uint8')
         semantic_mapped = np.zeros((height, width), dtype='uint8')
         instance_mapped = np.zeros((height, width, 3), dtype='uint8')
-
         u, v = points_cam_flat_uv[indices, 0], points_cam_flat_uv[indices, 1]
-        rgb_mapped[v, u] = rgb.reshape(-1, 3)[indices]
-        depth_mapped[v, u] = depth.reshape(-1)[indices]
-        normal_mapped[v, u] = normal.reshape(-1, 3)[indices]
-        semantic_mapped[v, u] = semantic.reshape(-1)[indices]
-        instance_mapped[v, u] = instance.reshape(-1, 3)[indices]
+        indices_original = np.flatnonzero(~invalid_points_mask)[indices]
+        rgb_mapped[v, u] = rgb.reshape(-1, 3)[indices_original]
+        depth_mapped[v, u] = depth.reshape(-1)[indices_original]
+        normal_mapped[v, u] = normal.reshape(-1, 3)[indices_original]
+        semantic_mapped[v, u] = semantic.reshape(-1)[indices_original]
+        instance_mapped[v, u] = instance.reshape(-1, 3)[indices_original]
 
         rgb = rgb_mapped
         depth = depth_mapped
@@ -741,13 +828,15 @@ def process_one_sample(
         boxes_3d[int(box_idx)] = new_value
 
     # calculate orientation
-    cam_rot = Rotation.from_quat((extrinsics['quat_x'],
-                                  extrinsics['quat_y'],
-                                  extrinsics['quat_z'],
-                                  extrinsics['quat_w']))
+    cam_rot = PatchedSciPyRotation.from_quat(
+        (extrinsics['quat_x'], extrinsics['quat_y'], extrinsics['quat_z'],
+         extrinsics['quat_w'])
+    )
     orientations = {}
     for key, box in boxes_3d.items():
-        box_orientation = Rotation.from_matrix(box["orientations"])
+        box_orientation = PatchedSciPyRotation.from_matrix(
+            box["orientations"], assume_valid=True
+        )
         # only take rotation around z-axis and convert to rad
         obj_rot_deg = np.rad2deg(box_orientation.as_rotvec()[2])
         cam_rot_deg = np.rad2deg(cam_rot.as_rotvec()[2])
@@ -875,6 +964,7 @@ def main(args=None):
     # write meta file ----------------------------------------------------------
     create_or_update_creation_metafile(
         destination_path,
+        prepare_args=vars(args),
         additional_subsamples=args.additional_subsamples,
         apply_tilt_shift_conversion=not args.no_tilt_shift_conversion
     )
@@ -975,8 +1065,49 @@ def main(args=None):
     camera_parameters_df = pd.read_csv(camera_parameters_csv_path,
                                        index_col='scene_name')
 
-    # for testing
-    # split_df = split_df[split_df['scene_name'] == 'ai_021_002']
+    # for debugging / testing
+    # -> no valid rotation matrix
+    # split_df = split_df[split_df['scene_name'] == 'ai_008_003']
+    # split_df = split_df[split_df['camera_name'] == 'cam_01']
+    # -> nan in depth/distances
+    # split_df = split_df[split_df['scene_name'] == 'ai_001_002']
+    # split_df = split_df[split_df['camera_name'] == 'cam_00']
+    # split_df = split_df[split_df['frame_id'] > 8]
+    # -> debug rgb deviations
+    # rgb_debug_targets = [
+    #     ('valid', 'ai_003_010', 'cam_00', 30),
+    #     ('valid', 'ai_004_003', 'cam_00', 19),
+    # ]
+    # rgb_debug_targets = [
+    #     ('train', 'ai_001_001', 'cam_00', 14),
+    #     ('train', 'ai_001_001', 'cam_00', 17),
+    #     ('valid', 'ai_004_003', 'cam_01', 68),
+    #     ('valid', 'ai_004_004', 'cam_00', 74)
+    # ]
+    # # debug_targets = rgb_debug_targets
+    # normal_debug_targets = [
+    #     ('train', 'ai_001_003', 'cam_00', 70),
+    #     ('train', 'ai_001_003', 'cam_00', 95)
+    # ]
+    # instance_debug_targets = [
+    #     ('train', 'ai_001_001', 'cam_00', 0),
+    #     ('train', 'ai_001_003', 'cam_00', 38)
+    # ]
+    # depth_debug_targets = [
+    #     ('train', 'ai_001_002', 'cam_02', 11),
+    #     ('train', 'ai_004_006', 'cam_01', 62)
+    # ]
+    # debug_targets =  rgb_debug_targets
+    # if debug_targets:
+    #     debug_mask = False
+    #     for split_name, scene_name, camera_name, frame_id in debug_targets:
+    #         debug_mask |= (
+    #             (split_df['split_partition_name'] == split_name) &
+    #             (split_df['scene_name'] == scene_name) &
+    #             (split_df['camera_name'] == camera_name) &
+    #             (split_df['frame_id'] == frame_id)
+    #         )
+    #     split_df = split_df[debug_mask]
 
     # process samples ----------------------------------------------------------
     start_time = datetime.datetime.now()

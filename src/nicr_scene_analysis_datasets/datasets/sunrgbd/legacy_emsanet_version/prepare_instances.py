@@ -7,11 +7,10 @@ import json
 from numba import jit
 from numpy import matlib
 import numpy as np
-from pkg_resources import resource_string
 from scipy.io import loadmat
-from scipy.spatial.transform import Rotation as R
 
-
+from ....utils.io import get_resource_path
+from ....utils.rotation import PatchedSciPyRotation
 from ...nyuv2 import nyuv2
 from ...nyuv2 import prepare_dataset
 
@@ -33,13 +32,16 @@ class SUNRGBDInstances:
         self.nyuv2_894_to_40_mapping = \
             np.concatenate([[0], self.nyuv2_40_classes['mapClass'][0]])
 
-        self.nyuv_894_classes_strings = nyuv2.NYUv2Meta.SEMANTIC_LABEL_LIST_894.class_names
+        self.nyuv_894_classes_strings = \
+            nyuv2.NYUv2Meta.SEMANTIC_LABEL_LIST_894.class_names
 
-        self.additional_mapping = json.loads(
-            resource_string(__name__, "nyu_additional_class_mapping.json"))
+        fp = get_resource_path(__package__, 'nyu_additional_class_mapping.json')
+        with open(fp, "r") as f:
+            self.additional_mapping = json.load(f)
 
-        weak_mapping = json.loads(
-            resource_string(__name__, "nyu_weak_box_3d_mapping.json"))
+        fp = get_resource_path(__package__, "nyu_weak_box_3d_mapping.json")
+        with open(fp, "r") as f:
+            weak_mapping = json.load(f)
 
         mat_len = len(self.nyuv2_894_to_40_mapping)
         self.weak_mapping_mat = np.zeros((mat_len, mat_len))  # + 1
@@ -53,7 +55,7 @@ class SUNRGBDInstances:
                 self.weak_mapping_mat[key_idx, v_idx] = 1
         self.unmapped_classes = {}
 
-        self.box_rot = R.from_rotvec([np.pi/2, 0, 0])
+        self.box_rot = PatchedSciPyRotation.from_rotvec([np.pi/2, 0, 0])
 
     def get_instance(self, boxes_3d, intrinsics, extrinscis,
                      depth_image, semantic_label):
@@ -115,7 +117,9 @@ class SUNRGBDInstances:
         fy = intrinsics["Fy"]
         cx = intrinsics["Cx"]
         cy = intrinsics["Cy"]
-        extrinscis_rot = R.from_matrix(extrinscis)
+        extrinscis_rot = PatchedSciPyRotation.from_matrix(
+            extrinscis, assume_valid=True
+        )
         h, w = depth_image.shape[:2]
 
         point_img = self.calc_point_coords(depth_image, fx, fy,

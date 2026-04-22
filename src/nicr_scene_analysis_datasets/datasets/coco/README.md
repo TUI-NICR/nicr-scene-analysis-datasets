@@ -8,18 +8,28 @@ For more details, see: [COCO dataset](https://cocodataset.org/#home)
 
 ## Prepare dataset
 1. Convert the dataset
+
     ```bash
     # general usage
     nicr_sa_prepare_dataset coco \
-        /path/where/to/store/coco/
+        /path/where/to/store/coco/ \
+        [--download-path /path/to/coco/downloads/ --do-not-delete-zip]
     ```
+
+    With arguments:
+    - `--download-path`:  
+      Path to the directory where the COCO download files are stored. 
+      If not provided, the script will attempt to download the files automatically.
+      See `prepare_dataset.py` for the expected file names.
+    - `--do-not-delete-zip`:  
+      If set, the downloaded zip files will not be deleted after extraction.
 
 2. (Optional) Generate auxiliary data
     > **Note**: To use auxiliary data generation, the package must be installed with the `withauxiliarydata` option:
     > ```bash
     > pip install -e .[withauxiliarydata]
     > ```
-
+  
     ```bash
     # for auxiliary data such as synthetic depth and rgb/panoptic embeddings
     nicr_sa_generate_auxiliary_data \
@@ -34,20 +44,20 @@ For more details, see: [COCO dataset](https://cocodataset.org/#home)
     ```
 
     With arguments:
-    - `--dataset-path`:
+    - `--dataset-path`:  
         Path to the prepared COCO dataset.
-    - `--auxiliary-data`:
+    - `--auxiliary-data`:  
         Types of auxiliary data to generate:
         - `depth`: Generates synthetic depth images from RGB.
         - `image-embedding`: Uses Alpha-CLIP to generate an embedding for the entire image.
         - `panoptic-embedding`: Uses Alpha-CLIP to generate an embedding for each panoptic mask.
-    - `--depth-estimator-device`:
+    - `--depth-estimator-device`:  
         Device to use for depth estimation (`cpu` or `cuda`).
-    - `--depth-estimators`:
+    - `--depth-estimators`:  
         Depth estimator(s) to use. Use `depthanything_v2__indoor_large` to match DVEFormer.
-    - `--embedding-estimator-device`:
+    - `--embedding-estimator-device`:  
         Device to use for embedding estimation (`cpu` or `cuda`).
-    - `--embedding-estimators`:
+    - `--embedding-estimators`:  
         Embedding estimator(s) to use. Use `alpha_clip__l14-336-grit-20m` to match DVEFormer.
-    - `--cache-models`:
+    - `--cache-models`:  
         Cache models locally to avoid reloading them in future runs.

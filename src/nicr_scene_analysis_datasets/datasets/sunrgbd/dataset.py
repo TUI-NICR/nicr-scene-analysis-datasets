@@ -27,7 +27,6 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
         self,
         *,
         dataset_path: Optional[str] = None,
-        instances_version: str = 'panopticndt',  # see notes below
         split: str = 'train',
         sample_keys: Tuple[str] = ('rgb', 'depth', 'semantic'),
         use_cache: bool = False,
@@ -35,6 +34,7 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
         depth_mode: str = 'refined',
         depth_force_mm: bool = False,
         semantic_use_nyuv2_colors: bool = False,
+        instances_version: str = 'panopticndt',  # see notes below
         scene_use_indoor_domestic_labels: bool = False,
         **kwargs: Any
     ) -> None:
@@ -45,6 +45,14 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
             use_cache=use_cache,
             **kwargs
         )
+        assert split in self.SPLITS
+        assert depth_mode in self.DEPTH_MODES
+        assert all(sk in self.get_available_sample_keys(split) for sk in sample_keys)
+        self._split = split
+
+        self._depth_mode = depth_mode
+        self._depth_force_mm = depth_force_mm
+        self._scene_use_indoor_domestic_labels = scene_use_indoor_domestic_labels
 
         # we created two versions of SUNRGB-D with instance annotations
         # extracted from existing 3d-box annotations:
@@ -59,7 +67,11 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
         # - 'anyold': this value can be used as workaround to load any dataset
         #   prepared with a package version < v0.7.0 - use this value only if
         #   you know what you are doing!
-        assert instances_version in (self.INSTANCE_VERSIONS + ('anyold',))
+        # - 'detect': detect instance version from creation meta, raise error
+        #   if it is not available.
+        assert instances_version in (
+            self.INSTANCE_VERSIONS + ('anyold', 'detect')
+        )
         self._instances_version = instances_version
 
         # try to load annotation version from creation meta, if not available
@@ -77,6 +89,11 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
             self._instances_version_meta = self._instances_version
 
         # determine paths based on annotation version
+        if 'detect' == self._instances_version:
+            if self._instances_version_meta == 'detect':
+                raise ValueError("Unable to detect instance version.")
+            self._instances_version = self._instances_version_meta
+
         if 'emsanet' == self._instances_version:
             assert self._instances_version_meta == self._instances_version
 
@@ -93,15 +110,6 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
             self.INSTANCES_DIR = self.INSTANCES_LEGACY_DIR
             self.ORIENTATIONS_DIR = self.ORIENTATIONS_LEGACY_DIR
             self.BOXES_DIR = self.BOXES_LEGACY_DIR
-
-        assert split in self.SPLITS
-        assert depth_mode in self.DEPTH_MODES
-        assert all(sk in self.get_available_sample_keys(split) for sk in sample_keys)
-        self._split = split
-
-        self._depth_mode = depth_mode
-        self._depth_force_mm = depth_force_mm
-        self._scene_use_indoor_domestic_labels = scene_use_indoor_domestic_labels
 
         # cameras
         if cameras is None:
@@ -180,6 +188,10 @@ class SUNRGBD(SUNRGBDMeta, RGBDDataset):
     @property
     def depth_force_mm(self) -> bool:
         return self._depth_force_mm
+
+    @property
+    def instances_version(self) -> str:
+        return self._instances_version
 
     def _get_filename(self, idx: int) -> str:
         if self.camera is None:

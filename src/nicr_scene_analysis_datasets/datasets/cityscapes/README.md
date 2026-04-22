@@ -9,30 +9,31 @@ For more details, see: [Cityscapes Dataset](https://www.cityscapes-dataset.com/)
 
 1. Download and unzip dataset files:
     Use `csDownload` or download the files mentioned below manually from: [Cityscapes Dataset Downloads](https://www.cityscapes-dataset.com/downloads/)
-
+    
     ```bash
-    CITYSCAPES_DOWNLOAD_DIR="/path/where/to/store/cityscapes_downloads"
+    CITYSCAPES_DOWNLOAD_PATH="/path/where/to/store/cityscapes_downloads"
 
     # using cityscapesScripts
     # use "csDownload -l" to list available packages
 
     # labels (semantic, instance)
-    csDownload gtFine_trainvaltest.zip -d $CITYSCAPES_DOWNLOAD_DIR    # -> 241MB
+    csDownload gtFine_trainvaltest.zip -d $CITYSCAPES_DOWNLOAD_PATH    # -> 241MB
     # rgb images
-    csDownload leftImg8bit_trainvaltest.zip -d $CITYSCAPES_DOWNLOAD_DIR     # -> 11GB
+    csDownload leftImg8bit_trainvaltest.zip -d $CITYSCAPES_DOWNLOAD_PATH     # -> 11GB
     # disparity images (only upon request)
-    csDownload disparity_trainvaltest.zip -d $CITYSCAPES_DOWNLOAD_DIR     # -> 3.5GB
+    csDownload disparity_trainvaltest.zip -d $CITYSCAPES_DOWNLOAD_PATH     # -> 3.5GB
     # intrinsic and extrinsic camera parameter to calculate depth
-    csDownload camera_trainvaltest.zip -d $CITYSCAPES_DOWNLOAD_DIR    # -> 2MB
+    csDownload camera_trainvaltest.zip -d $CITYSCAPES_DOWNLOAD_PATH    # -> 2MB
 
     # unzip files
-    find $CITYSCAPES_DOWNLOAD_DIR -name '*.zip' -exec unzip -o {} -d $CITYSCAPES_DOWNLOAD_DIR \;
+    find $CITYSCAPES_DOWNLOAD_PATH -name '*.zip' -exec unzip -o {} -d $CITYSCAPES_DOWNLOAD_PATH \;
     ```
 
 2. Convert dataset:
+
     ```bash
     # general usage
     nicr_sa_prepare_dataset cityscapes \
         /path/where/to/store/cityscapes \
-        $CITYSCAPES_DOWNLOAD_DIR
+        $CITYSCAPES_DOWNLOAD_PATH
     ```

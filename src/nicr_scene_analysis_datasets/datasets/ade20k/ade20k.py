@@ -48,6 +48,7 @@ class ADE20KMeta:
 
     # based on Panoptic SegFormer: https://github.com/zhiqi-li/Panoptic-SegFormer/blob/master/converter/panoptic_ade20k_categories.json
     # same thing/stuff classes as used as well in MaskFormer, Mask2Former, and OneFormer
+    # generated using: stuff/ade20k/generate_semantic_label_list_from_panoptic_segformer.py
     # note, we additionally inserted a void class at the beginning
     SEMANTIC_LABEL_LIST_CHALLENGE_150 = SemanticLabelList((
             # class_name, is_thing, use orientations, color
@@ -207,6 +208,7 @@ class ADE20KMeta:
 
     # list of scene labels used
     # based on sceneCategories.txt file provided in ADEChallengeData2016
+    # generated using: stuff/ade20k/generate_scene_label_lists.py
     # notes:
     # - there is a "misc" class which can be interpreted as void class
     # - we ordered the classes by name ascending

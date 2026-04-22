@@ -7,3 +7,4 @@ omit=
     */datasets/sunrgbd/prepare_instances.py
     */mira/*
     */scripts/*
+    */stuff/*

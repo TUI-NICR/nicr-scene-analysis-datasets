@@ -27,7 +27,7 @@ from .ade20k import ADE20KMeta
 CHALLENGE_URLS = {
     # 2016 Scene Parse Benchmark Challenge
     'ADEChallengeData2016.zip': 'http://data.csail.mit.edu/places/ADEchallenge/ADEChallengeData2016.zip',
-    # 2017 Places Challenge (instance segmenation part)
+    # 2017 Places Challenge (instance segmentation part)
     'annotations_instance.tar': 'http://sceneparsing.csail.mit.edu/data/ChallengeData2017/annotations_instance.tar'
 }
 
@@ -135,7 +135,7 @@ def _challenge_prepare_data(challenge_raw_path, output_path, n_processes=1):
     n = 0
     for split in challenge_splits:
         rgb_path = os.path.join(output_path, split, ADE20KMeta.IMAGE_DIR)
-        filepaths = glob(os.path.join(rgb_path, '**/*.jpg'))
+        filepaths = glob(os.path.join(rgb_path, '*/*.jpg'))
         filepaths = sorted(
             filepaths,
             key=lambda x: os.path.basename(x)  # order by filename, not path
@@ -386,10 +386,11 @@ def main(args=None):
                             n_processes=args.n_processes)
 
     # write meta file
-    create_or_update_creation_metafile(output_path)
+    create_or_update_creation_metafile(output_path, prepare_args=vars(args))
 
     # clean up ----------------------------------------------------------------
     print('Cleaning up ...')
+    shutil.rmtree(tmp_path)
 
 
 if __name__ == '__main__':

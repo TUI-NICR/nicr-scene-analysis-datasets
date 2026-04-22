@@ -35,9 +35,9 @@ def main(args=None):
         help="Path where to store dataset."
     )
     parser.add_argument(
-        'cityscapes_filepath',
+        'cityscapes_path',
         type=str,
-        help="Filepath to downloaded (and uncompressed) Cityscapes files."
+        help="Path to downloaded (and uncompressed) Cityscapes files."
     )
     args = parser.parse_args(args)
 
@@ -48,7 +48,7 @@ def main(args=None):
     os.makedirs(output_path, exist_ok=True)
 
     # write meta file
-    create_or_update_creation_metafile(output_path)
+    create_or_update_creation_metafile(output_path, prepare_args=vars(args))
 
     def get_filepaths(path, extension):
         # skip folders such as 'demoVideo'
@@ -63,12 +63,12 @@ def main(args=None):
         return filepaths
 
     rgb_filepaths = get_filepaths(
-        os.path.join(args.cityscapes_filepath, RGB_DIR),
+        os.path.join(args.cityscapes_path, RGB_DIR),
         extension='.png',
     )
 
     label_filepaths = get_filepaths(
-        os.path.join(args.cityscapes_filepath, LABEL_DIR),
+        os.path.join(args.cityscapes_path, LABEL_DIR),
         extension='.png',
     )
     semantic_label_filepaths = [fp for fp in label_filepaths
@@ -78,12 +78,12 @@ def main(args=None):
                                 if os.path.basename(fp).find('instanceIds') > -1]
 
     disparity_raw_filepaths = get_filepaths(
-        os.path.join(args.cityscapes_filepath, DISPARITY_RAW_DIR),
+        os.path.join(args.cityscapes_path, DISPARITY_RAW_DIR),
         extension='.png',
     )
 
     parameters_filepaths = get_filepaths(
-        os.path.join(args.cityscapes_filepath, PARAMETERS_RAW_DIR),
+        os.path.join(args.cityscapes_path, PARAMETERS_RAW_DIR),
         extension='.json',
     )
 

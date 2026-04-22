@@ -51,7 +51,8 @@ nicr_scene_analysis_datasets = [
     # SUN RGB-D
     "datasets/sunrgbd/README.md",
     "datasets/sunrgbd/nyu_additional_class_mapping.json",
-    "datasets/sunrgbd/nyu_weak_box_3d_mapping.json",
+    "datasets/sunrgbd/legacy_emsanet_version/nyu_additional_class_mapping.json",
+    "datasets/sunrgbd/legacy_emsanet_version/nyu_weak_box_3d_mapping.json",
     # ScanNet
     "datasets/scannet/README.md",
     "datasets/scannet/scannetv2_train.txt",
@@ -112,8 +113,12 @@ exclude = [
     # we are not the authors of these files
     "src/*scannet/scannet200_constants.py",
     "src/*scannet/SensorData.py",
+    # automatically generated files
+    "src/*scenenetrgbd/scenenet_pb2.py",
     # stuff
     "stuff/*",
+    # external - we are not the authors of these files
+    "external/*",
 ]
 
 [tool.ruff.lint]

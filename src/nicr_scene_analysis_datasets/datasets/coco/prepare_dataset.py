@@ -118,7 +118,7 @@ def main(args=None):
     os.makedirs(output_path, exist_ok=True)
 
     # write meta file
-    create_or_update_creation_metafile(output_path)
+    create_or_update_creation_metafile(output_path, prepare_args=vars(args))
 
     if args.download_path is None:
         download_path = output_path

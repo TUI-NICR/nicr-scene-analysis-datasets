@@ -17,14 +17,13 @@ import cv2
 import h5py
 import numpy as np
 import scipy.io
-from scipy.spatial.transform import Rotation as R
 from tqdm import tqdm
 
-from ....utils.img import save_indexed_png
 from ....utils.io import create_dir
 from ....utils.io import create_or_update_creation_metafile
 from ....utils.io import download_file
 from ....utils.io import extract_zip
+from ....utils.rotation import PatchedSciPyRotation
 from ..sunrgbd import SUNRGBDMeta
 from . import prepare_instances
 from .match_nyuv2_instances import NYUv2InstancesMatcher
@@ -113,7 +112,8 @@ def main(args=None):
     # update or write metafile
     create_or_update_creation_metafile(
         output_path,
-        additional_meta={'instances_version': args.instances_version, }
+        prepare_args=vars(args),
+        instances_version=args.instances_version
     )
 
     # download and extract data
@@ -231,24 +231,6 @@ def main(args=None):
         semantic = semantic.astype(np.uint8)
         cv2.imwrite(semantic_path, semantic)
 
-        semantic_path_colored_sun = os.path.join(
-            output_path, split_dir, SUNRGBDMeta.SEMANTIC_COLORED_DIR_SUN,
-            cam_path, f'{i:05d}.png'
-        )
-        create_dir(os.path.dirname(semantic_path_colored_sun))
-        save_indexed_png(semantic_path_colored_sun, semantic,
-                         np.array(SUNRGBDMeta.SEMANTIC_CLASS_COLORS,
-                                  dtype='uint8'))
-
-        semantic_path_colored_nyuv2 = os.path.join(
-            output_path, split_dir, SUNRGBDMeta.SEMANTIC_COLORED_DIR_NYUV2,
-            cam_path, f'{i:05d}.png'
-        )
-        create_dir(os.path.dirname(semantic_path_colored_nyuv2))
-        save_indexed_png(semantic_path_colored_nyuv2, semantic,
-                         np.array(SUNRGBDMeta.SEMANTIC_CLASS_COLORS_NYUV2,
-                                  dtype='uint8'))
-
         # Scene class ----------------------------------------------------------
         scene_class_path_tmp = os.path.join(data_path, sample_path,
                                             'scene.txt')
@@ -312,7 +294,9 @@ def main(args=None):
                                        f'{i:05d}.json')
         create_dir(os.path.dirname(extrinsics_path))
 
-        extrinsic_quat = R.from_matrix(extrinsic).as_quat()
+        extrinsic_quat = PatchedSciPyRotation.from_matrix(
+            extrinsic, assume_valid=True
+        ).as_quat()
         quat_x, quat_y, quat_z, quat_w = extrinsic_quat
         extrinsics_dict = {
             'x': 0,
@@ -424,8 +408,7 @@ def main(args=None):
 
     if args.copy_instances_from_nyuv2 and args.create_instances:
         print("Matching NYUv2 instance masks to SUNRGBD")
-        matcher = NYUv2InstancesMatcher(args.output_path,
-                                        args.nyuv2_path)
+        matcher = NYUv2InstancesMatcher(args.output_path, args.nyuv2_path)
         matcher.do_matching()
 
     # cleanup

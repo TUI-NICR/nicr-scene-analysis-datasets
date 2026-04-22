@@ -17,14 +17,14 @@ import scipy.io
 from numba import jit
 from numba import prange
 from numpy import matlib
-from pkg_resources import resource_string
-from scipy.spatial.transform import Rotation as R
 from tqdm import tqdm
 
 from ...utils.io import create_dir
 from ...utils.io import create_or_update_creation_metafile
 from ...utils.io import download_file
 from ...utils.io import extract_zip
+from ...utils.io import get_resource_path
+from ...utils.rotation import PatchedSciPyRotation
 from ..nyuv2 import prepare_dataset as nyuv2_prepare_dataset
 from ..nyuv2.nyuv2 import NYUv2Meta
 from .match_nyuv2_instances import NYUv2InstancesMatcher
@@ -176,9 +176,9 @@ def load_additional_bounding_box_to_nyuv2_40_mapping():
     # 'refrigerator'.
     # This additional mapping was only done for box classes which
     # appear more than 10 times in the dataset.
-    additional_mapping = json.loads(
-        resource_string(__name__, 'nyu_additional_class_mapping.json')
-    )
+    fp = get_resource_path(__package__, 'nyu_additional_class_mapping.json')
+    with open(fp, 'r') as f:
+        additional_mapping = json.load(f)
 
     # load class names
     class_names_40_with_void = NYUv2Meta.SEMANTIC_LABEL_LIST_40.class_names
@@ -273,7 +273,7 @@ def compute_point_cloud(depth, intrinsics, extrinsics):
     points[..., 2] = depth_meters
 
     # compute transformation (rotation) matrix from extrinsic parameters
-    rotation_extrinsic = R.from_quat(
+    rotation_extrinsic = PatchedSciPyRotation.from_quat(
         [extrinsics['quat_x'], extrinsics['quat_y'], extrinsics['quat_z'],
          extrinsics['quat_w']]
     )
@@ -282,7 +282,9 @@ def compute_point_cloud(depth, intrinsics, extrinsics):
 
     # create rotation matrix for transformation from camera to world, i.e.,
     # rotation around x-axis by 90 degrees
-    rotation_world_to_cam = R.from_rotvec(np.array([np.pi/2, 0, 0]))
+    rotation_world_to_cam = PatchedSciPyRotation.from_rotvec(
+        np.array([np.pi/2, 0, 0])
+    )
 
     # combine rotation matrices
     rotation = rotation_world_to_cam.inv() * rotation_extrinsic
@@ -596,7 +598,8 @@ def main(args=None):
     # update or write metafile
     create_or_update_creation_metafile(
         output_path,
-        additional_meta={'instances_version': args.instances_version, }
+        prepare_args=vars(args),
+        instances_version=args.instances_version
     )
 
     # download and extract data
@@ -738,7 +741,9 @@ def main(args=None):
         create_dir(os.path.dirname(extrinsics_path))
 
         extrinsic = meta_3d.anno_extrinsics.tolist()
-        extrinsic_quat = R.from_matrix(extrinsic).as_quat()
+        extrinsic_quat = PatchedSciPyRotation.from_matrix(
+            extrinsic, assume_valid=True
+        ).as_quat()
         quat_x, quat_y, quat_z, quat_w = extrinsic_quat
         extrinsics = {
             'x': 0,

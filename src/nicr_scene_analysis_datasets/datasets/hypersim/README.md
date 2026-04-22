@@ -20,12 +20,13 @@ For more details, see: [Hypersim](https://machinelearning.apple.com/research/hyp
 
 ## Notes
 
-> Hypersim uses non-standard perspective projection matrices (with
-tilt-shift photography parameters) in most scenes. As common frameworks, such as
-MIRA or ROS, do not support this projection, we convert the camera parameters if
-possible or project the data/annotations back to a standard camera ignoring the
-tilt-shift parameters. Note that this is not a perfect conversion and introduces
-some artifacts, i.e., void pixels as we only back-project points without
+> [!IMPORTANT]
+> Hypersim uses non-standard perspective projection matrices (with 
+tilt-shift photography parameters) in most scenes. As common frameworks, such as 
+MIRA or ROS, do not support this projection, we convert the camera parameters if 
+possible or project the data/annotations back to a standard camera ignoring the 
+tilt-shift parameters. Note that this is not a perfect conversion and introduces 
+some artifacts, i.e., void pixels as we only back-project points without 
 contradictions. Void is assigned to ~5% of the pixels.
 However, rendering full images with a standard perspective projection
 requires buying the dataset meshes.
@@ -33,25 +34,54 @@ For more details, see [this issue](https://github.com/apple/ml-hypersim/issues/2
 To disable this conversion and to stick to original images, pass the
 `--no-tilt-shift-conversion` parameter to the prepare script.
 
-> We observed that merging semantic and instance labels in order to derive
-panoptic labels might slightly change the semantic in few images. This is
-because there are some pixels that belong to a thing class but are not assigned
-to any instance (instance=0), e.g., in scene ai_052_001, a lamp is labeled as
-lamp but is not annotated as instance. Panoptic merging assigns void for those
-pixels. There is no workaround for this issue. Affected scenes:
-valid: ai_023_003, ai_041_003, ai_052_001, ai_052_003 -> 1576566 pixels (0.03%);
-test: ai_005_001, ai_008_005, ai_008_005, ai_022_001 -> 801359 pixels (0.01%).
-Computing mIoU in [0, 1] to semantic / panoptic_semantic as ground truth
+> [!IMPORTANT]
+> The Hypersim dataset comes with 461 indoor scenes rendered in 774 camera 
+trajectories. The author already blacklisted 107 of the original 568 scenes and 
+some specific frames. However, we identified additional scenes/trajectories that 
+should be blacklisted due to various issues. We process all frames but exclude 
+them in the final dataset splits. See `BLACKLIST` in `hypersim.py` for more 
+details. Note that we do NOT blacklist any test data, as this would affect 
+benchmarking.  
+
+> [!NOTE]
+> [2025-02-26] During tilt-shift reprojection, invalid depth points were 
+  projected to (0,0) and removed by the uniqueness filter, so pixel (0,0) 
+  could end up as zero in all modalities (rgb, depth, semantic, instance,
+  normal) for some frames. This has only minor effects on reported results. 
+  We now skip zero-depth points during reprojection to avoid this artifact.
+
+
+> [!NOTE]
+> [2025-01-03] Newer scipy versions (tested: 1.16.2) unveiled that the camera 
+orientation provided by the hypersim authors for some first frames (e.g., 
+'ai_008_003/cam_01/0000' and 'ai_046_001/cam_00/0000' in the training split) 
+are not valid rotation matrices. Note that this does not affect any of our 
+reported results, as we did not use the training split for mapping experiments. 
+For more details, see this 
+[issue](https://github.com/apple/ml-hypersim/issues/103). 
+
+> [!NOTE]
+> We observed that merging semantic and instance labels in order to derive 
+panoptic labels might slightly change the semantic in few images. This is 
+because there are some pixels that belong to a thing class but are not assigned 
+to any instance (instance=0), e.g., in scene ai_052_001, a lamp is labeled as 
+lamp but is not annotated as instance. Panoptic merging assigns void for those 
+pixels. There is no workaround for this issue. Affected scenes:  
+valid: ai_023_003, ai_041_003, ai_052_001, ai_052_003 -> 1576566 pixels (0.03%);  
+test: ai_005_001, ai_008_005, ai_008_005, ai_022_001 -> 801359 pixels (0.01%).  
+Computing the mIoU in [0, 1] to the semantic / panoptic_semantic as ground truth 
 changes the result by ~0.0001-0.0002 - so it is not a big issue and negligible.
 
-> We further observed that some images are not correctly annotated. There are
-instances that are assigned to multiple semantic classes. While most overlaps
-are with void (unlabeled textures -> void label), we observed other issues for:
-ai_017_004: semantic classes 35 + 40: lamp + otherprop -> some small stuff in
-the background; ai_021_008: semantic classes 12 + 35 -> kitchen counter + lamp
-belong to same instance -> might be an annotation fault; ai_022_009: semantic
-classes 1 + 8 -> door frame labeled as wall, but door instance contains both
-the door frame and the door.
+> [!NOTE]
+> We further observed that some images are not correctly annotated. There are 
+instances that are assigned to multiple semantic classes. While most overlaps 
+are with void (unlabeled textures -> void label), we observed other issues for:  
+ai_017_004: semantic classes 35 + 40: lamp + otherprop -> some small stuff in 
+the background;   
+ai_021_008: semantic classes 12 + 35 -> kitchen counter + lamp belong to same 
+instance -> might be an annotation fault;   
+ai_022_009: semantic classes 1 + 8 -> door frame labeled as wall, but door 
+instance contains both the door frame and the door.
 
 ## Prepare dataset
 
@@ -77,13 +107,13 @@ the door frame and the door.
         [--n-processes N]
     ```
     With arguments:
-    - `--additional_subsamples`:
-    For additional subsampled versions of the dataset.
-    - `--n-processes`:
-    Number of worker processes to spawn.
-    - `--no-tilt-shift-conversion`:
-    Disable projecting the data/annotations back to a standard camera ignoring the
-    tilt-shift parameters (use this to create dataset compatible with < v050).
+    - `--additional_subsamples`:  
+        For additional subsampled versions of the dataset.
+    - `--n-processes`:  
+        Number of worker processes to spawn.
+    - `--no-tilt-shift-conversion`:  
+        Disable projecting the data/annotations back to a standard camera ignoring the tilt-shift parameters 
+        (use this to create dataset compatible with < v050).
 
 3. (Optional) Generate auxiliary data:
     > **Note**: To use auxiliary data generation, the package must be installed with the `withauxiliarydata` option:
@@ -103,24 +133,22 @@ the door frame and the door.
         --depth-estimators depthanything_v2__indoor_large \
         --cache-models
     ```
-
+  
     With arguments:
-    - `--dataset-path`:
+    - `--dataset-path`:  
         Path to the prepared Hypersim dataset.
-    - `--auxiliary-data`:
+    - `--auxiliary-data`:  
         Types of auxiliary data to generate:
         - `depth`: Generates synthetic depth images from RGB.
         - `image-embedding`: Uses Alpha-CLIP to generate an embedding for the entire image.
         - `panoptic-embedding`: Uses Alpha-CLIP to generate an embedding for each panoptic mask.
-    - `--depth-estimator-device`:
+    - `--depth-estimator-device`:  
         Device to use for depth estimation (`cpu` or `cuda`).
-    - `--depth-estimators`:
+    - `--depth-estimators`:  
         Depth estimator(s) to use. Use `depthanything_v2__indoor_large` to match DVEFormer.
-    - `--embedding-estimator-device`:
+    - `--embedding-estimator-device`:  
         Device to use for embedding estimation (`cpu` or `cuda`).
-    - `--embedding-estimators`:
+    - `--embedding-estimators`:  
         Embedding estimator(s) to use. Use `alpha_clip__l14-336-grit-20m` to match DVEFormer.
-    - `--cache-models`:
+    - `--cache-models`:  
         Cache models locally to avoid reloading them in future runs.
-
-

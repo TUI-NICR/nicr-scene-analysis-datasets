@@ -13,8 +13,8 @@ import numpy as np
 import open3d as o3d
 import plyfile
 import tqdm
-from scipy.spatial.transform import Rotation as R
 
+from ..utils.rotation import PatchedSciPyRotation
 from .. import get_dataset_class
 from .. import KNOWN_DATASETS
 from .. import ScanNet
@@ -154,7 +154,7 @@ def _compute_labeled_point_cloud(sample, max_depth):
     pc.points = o3d.utility.Vector3dVector(points)    # must be float64
 
     # compute transformation matrix from extrinsic parameters
-    rotation = R.from_quat(
+    rotation = PatchedSciPyRotation.from_quat(
         [extrinsics['quat_x'], extrinsics['quat_y'], extrinsics['quat_z'],
          extrinsics['quat_w']]
     )
@@ -251,7 +251,7 @@ def main(args=None):
     # process scenes
     pbar = tqdm.tqdm(total=len(dataset))
     for scene, indices in scenes.items():
-        pbar.set_description(f"Scene: {scene}")
+        pbar.set_description(f"Current scene: {scene}")
 
         # create empty point cloud
         pc = o3d.geometry.PointCloud()

@@ -216,7 +216,8 @@ def main(args=None):
         extension = args.file_extension
 
     if args.recursive:
-        filepaths = glob(os.path.join(base_path, '**', f'*.{extension}'))
+        filepaths = glob(os.path.join(base_path, '**', f'*.{extension}'),
+                         recursive=True)
     else:
         filepaths = glob(os.path.join(base_path, f'*.{extension}'))
     filepaths = sorted(filepaths)

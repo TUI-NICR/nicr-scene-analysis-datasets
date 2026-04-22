@@ -4,7 +4,6 @@
 """
 import numpy as np
 from packaging import version
-from scipy.spatial.transform import Rotation
 
 import mirapy
 from PythonCameraIntrinsicWrapper import PinholeCameraIntrinsicNormalized
@@ -15,6 +14,7 @@ from .. import Hypersim
 from ._base_reader import MIRAReaderBase
 from .utils import to_mira_img
 from .utils import to_mira_img8u1
+from ..utils.rotation import PatchedSciPyRotation
 
 
 class HypersimReaderBase(MIRAReaderBase):
@@ -250,7 +250,9 @@ class HypersimReaderBase(MIRAReaderBase):
 
                 extents = np.array(box["extents"])
                 positions = np.array(box["positions"])
-                orientation = Rotation.from_matrix(box["orientations"])
+                orientation = PatchedSciPyRotation.from_matrix(
+                    box["orientations"], assume_valid=True
+                )
 
                 origin = mirapy.Point3f(positions[0] - extents[0]/2,
                                         positions[1] - extents[1]/2,

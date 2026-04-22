@@ -210,8 +210,8 @@ def get_dataset(
     args,
     split: str,
     sample_keys: List[str],
-    semantic_n_classes: Optional[int] = None,
-    depth_estimator: Optional[str] = None
+    depth_estimator: Optional[str] = None,
+    **dataset_kwargs
 ) -> DatasetBase:
     dataset_class = get_dataset_class(args.dataset, with_auxiliary_data=True)
     available_sample_keys = dataset_class.get_available_sample_keys(split)
@@ -229,15 +229,14 @@ def get_dataset(
         'dataset_path': args.dataset_path,
         'split': split,
         'sample_keys': reduced_sample_keys,
-        'depth_estimator': depth_estimator
+        'depth_estimator': depth_estimator,
+        **dataset_kwargs
     }
 
     # E.g. for ScanNet as smaller subsample might be useful for mapping
     subsample = args.subsample
     if subsample is not None:
         kwargs['subsample'] = subsample
-    if semantic_n_classes is not None:
-        kwargs['semantic_n_classes'] = semantic_n_classes
 
     return dataset_class(**kwargs)
 
@@ -531,10 +530,28 @@ def generate_panoptic_and_text_class_name_embedding(
 ) -> Dict[str, Dict[str, np.ndarray]]:
     # Set the required sample keys for the dataset.
     required_dataset_keys = ['identifier', 'rgb', 'instance', 'semantic']
+
+    # Some datasets (such as COCO or SUNRGB-D) only have one valid semantic
+    # class spectrum , other datasets (such as NYUv2 or ScanNet) have multiple
+    # spectra.
+    dataset_class = get_dataset_class(args.dataset)
+    if (
+        isinstance(dataset_class.SEMANTIC_N_CLASSES, Sequence) and
+        len(dataset_class.SEMANTIC_N_CLASSES) > 1
+    ):
+        # semantic_n_classes is relevant for the dataset, pass and keep it
+        dataset_kwargs = {'semantic_n_classes': semantic_n_classes}
+    else:
+        # semantic_n_classes is not relevant for the dataset, use None in
+        # naming later
+        dataset_kwargs = {}
+        semantic_n_classes = None
+
     # Get the dataset object
     dataset = get_dataset(
-        args, split, required_dataset_keys, semantic_n_classes
+        args, split, required_dataset_keys, **dataset_kwargs
     )
+
     # The get_dataset function might remove some sample keys which are not
     # available in the dataset (e.g. instance or semantic).
     # Therefore, we need to check if the required keys are actually available.
@@ -746,8 +763,10 @@ def main(args=None) -> None:
         auxiliary_meta['auxiliary_scene_class_name_embeddings'] = \
             relative_npy_file_path
 
-    if 'panoptic-embedding' in args.auxiliary_data and \
-            is_embedding_estimation_available(raise_error=True):
+    if (
+        'panoptic-embedding' in args.auxiliary_data and
+        is_embedding_estimation_available(raise_error=True)
+    ):
         semantic_class_name_embeddings = {}
         for semantic_n_classes in args.embedding_semantic_n_classes:
             print(
@@ -758,17 +777,10 @@ def main(args=None) -> None:
             max_instances_per_category = (1 << 16)
             for split in splits_to_process:
                 print(f"Processing split '{split}'")
-                # Some datasets only have one valid class spectrum for semantic
-                # and don't expect the user to provide the number of classes
-                # as an argument.
-                semantic_n_classses_arg = None
-                if len(args.embedding_semantic_n_classes) > 1:
-                    semantic_n_classses_arg = semantic_n_classes
-
                 current_semantic_class_name_embeddings = \
                     generate_panoptic_and_text_class_name_embedding(
                         args=args, split=split, tmp_path=tmp_path,
-                        semantic_n_classes=semantic_n_classses_arg,
+                        semantic_n_classes=semantic_n_classes,
                         void_label=void_label,
                         max_instances_per_category=max_instances_per_category
                     )
@@ -808,7 +820,11 @@ def main(args=None) -> None:
         auxiliary_meta['auxiliary_semantic_class_name_embeddings'] = \
             relative_npy_file_path
 
-    create_or_update_creation_metafile(args.dataset_path, **auxiliary_meta)
+    create_or_update_creation_metafile(
+        dataset_basepath=args.dataset_path,
+        generate_auxiliary_args=vars(args),
+        **auxiliary_meta
+    )
 
     # Clean up
     shutil.rmtree(tmp_path)

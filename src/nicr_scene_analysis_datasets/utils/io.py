@@ -9,6 +9,7 @@ from collections import OrderedDict
 from datetime import datetime
 import getpass
 import hashlib
+from importlib import resources
 import json
 import os
 import sys
@@ -166,3 +167,11 @@ def get_sha256_hash(filepath: str) -> str:
             sha256_hash.update(byte_block)
     # Get the hexadecimal digest of the hash
     return sha256_hash.hexdigest()
+
+
+def get_resource_path(package_name, resource_name) -> str:
+    if sys.version_info >= (3, 9):
+        return str(resources.files(package_name).joinpath(resource_name))
+    else:
+        with resources.path(package_name, resource_name) as path:
+            return str(path)
