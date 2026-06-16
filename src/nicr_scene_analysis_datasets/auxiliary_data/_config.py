@@ -2,6 +2,8 @@
 """
 .. codeauthor:: Soehnke Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
 """
+from typing import Dict, List
+
 import dataclasses
 
 from ..dataset_base import DatasetConfig
@@ -9,18 +11,20 @@ from ..dataset_base import DatasetConfig
 
 @dataclasses.dataclass(frozen=True)
 class DatasetConfigWithAuxiliary(DatasetConfig):
-    semantic_text_embeddings: list = None
-    scene_text_embeddings: list = None
-    mean_embedding_per_semantic_class: dict = None
-    mean_image_embedding_per_semantic_class: dict = None
+    semantic_text_embeddings: List = None
+    scene_text_embeddings: List = None
+    mean_embedding_per_semantic_class: Dict = None
+    mean_image_embedding_per_semantic_class: Dict = None
+    mean_image_embedding_per_scene_class: Dict = None
 
 
 def build_dataset_config_with_auxiliary(
     original_config: DatasetConfig,
-    semantic_text_embeddings: list,
-    scene_text_embeddings: list,
-    mean_embedding_per_semantic_class: dict,
-    mean_image_embedding_per_semantic_class: dict
+    semantic_text_embeddings: List,
+    scene_text_embeddings: List,
+    mean_embedding_per_semantic_class: Dict,
+    mean_image_embedding_per_semantic_class: Dict,
+    mean_image_embedding_per_scene_class: Dict,
 ) -> DatasetConfigWithAuxiliary:
     """
     Creates a new DatasetConfigWithAuxiliary instance by copying attributes
@@ -38,6 +42,7 @@ def build_dataset_config_with_auxiliary(
         semantic_text_embeddings=semantic_text_embeddings,
         scene_text_embeddings=scene_text_embeddings,
         mean_embedding_per_semantic_class=mean_embedding_per_semantic_class,
-        mean_image_embedding_per_semantic_class=mean_image_embedding_per_semantic_class
+        mean_image_embedding_per_semantic_class=mean_image_embedding_per_semantic_class,
+        mean_image_embedding_per_scene_class=mean_image_embedding_per_scene_class,
     )
     return new_config

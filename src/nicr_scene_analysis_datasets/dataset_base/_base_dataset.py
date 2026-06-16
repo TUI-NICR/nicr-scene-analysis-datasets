@@ -407,13 +407,14 @@ class DatasetBase(abc.ABC):
         weight_mode: str = 'median-frequency',
         c: float = 1.02,
         n_threads: int = 1,
-        debug: bool = False
+        debug: bool = False,
+        ignore_first_class: bool = True
     ) -> np.ndarray:
         return compute_class_weights(
             dataset=self,
             sample_key='semantic',
             n_classes=self.semantic_n_classes,
-            ignore_first_class=True,
+            ignore_first_class=ignore_first_class,
             weight_mode=weight_mode,
             c=c,
             n_threads=n_threads,

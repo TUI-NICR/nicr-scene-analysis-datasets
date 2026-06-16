@@ -15,6 +15,7 @@ from ._config import build_dataset_config_with_auxiliary
 from ..dataset_base import DatasetBase
 from ..dataset_base import DepthDataset
 from ..dataset_base import DepthStats
+from ..dataset_base._annotation import MetaDict
 from ..dataset_base._annotation import PanopticEmbeddingDict
 
 
@@ -32,6 +33,7 @@ class _AuxiliaryDataset(DatasetBase):
         panoptic_embedding_estimator: Optional[str] = None,
         semantic_n_classes: Optional[int] = None,
         compute_mean_visual_embeddings: bool = False,
+        mean_visual_embedding_types: Tuple[str, ...] = ('semantic',),
         normalize_embeddings_on_load: bool = True,
         **kwargs
     ) -> None:
@@ -62,6 +64,7 @@ class _AuxiliaryDataset(DatasetBase):
         self.scene_text_embedding_list = []
         self._mean_embedding_per_semantic_class = {}
         self._mean_image_embedding_per_semantic_class = {}
+        self._mean_image_embedding_per_scene_class = {}
         self._normalize_embeddings_on_load = normalize_embeddings_on_load
 
         self.AUXILIARY_IMAGE_EMBEDDING_DIR_FMT = 'image_embedding_{:s}'
@@ -214,56 +217,85 @@ class _AuxiliaryDataset(DatasetBase):
 
         self.mean_embedding_per_panoptic_class = None
         self.mean_image_embedding_per_panoptic_class = None
+        self.mean_image_embedding_per_scene_class = None
 
         if dataset_path is not None and compute_mean_visual_embeddings:
-            self.compute_mean_embeddings()
+            self.compute_mean_embeddings(mean_visual_embedding_types)
 
-    def compute_mean_embeddings(self):
-        print("Computing mean embeddings per semantic class and image embedding class...")
+    def compute_mean_embeddings(self, mean_visual_embedding_types: Tuple[str, ...]) -> None:
+        print(f"Computing mean embeddings for {mean_visual_embedding_types}...")
         self._mean_embedding_per_semantic_class = {}
         self._mean_image_embedding_per_semantic_class = {}
+        self._mean_image_embedding_per_scene_class = {}
 
         for idx in tqdm(range(len(self))):
-            panoptic_embedding = self.load('panoptic_embedding', idx)
             image_embedding = self.load('image_embedding', idx)
+            normalized_image_embedding = normalize_embedding(image_embedding)
 
-            for panoptic_id, embedding_vec in panoptic_embedding.items():
-                # TODO: This should not be hardcoded.
-                # Extract semantic class ID
-                semantic_id = int(panoptic_id) // (1 << 16)
-                if semantic_id not in self._mean_embedding_per_semantic_class:
-                    self._mean_embedding_per_semantic_class[semantic_id] = \
-                        normalize_embedding(embedding_vec)
-                    self._mean_image_embedding_per_semantic_class[semantic_id] = \
-                        normalize_embedding(image_embedding)
+            if 'scene' in mean_visual_embedding_types:
+                scene_class = self.load('scene', idx)
+                if scene_class not in self._mean_image_embedding_per_scene_class:
+                    # Ensure to create a copy of the normalized image
+                    # embedding, as we will modify it later on.
+                    self._mean_image_embedding_per_scene_class[scene_class] = \
+                        normalized_image_embedding.copy()
                 else:
-                    self._mean_embedding_per_semantic_class[semantic_id] += \
-                        normalize_embedding(embedding_vec)
-                    self._mean_image_embedding_per_semantic_class[semantic_id] += \
-                        normalize_embedding(image_embedding)
+                    self._mean_image_embedding_per_scene_class[scene_class] += \
+                        normalized_image_embedding
 
-        # Handle the case when there are semantic classes, which are not present
-        # in the training set (e.g. SUN RGB-D idx 20).
-        for semantic_id in range(1, self.semantic_n_classes):
-            if semantic_id not in self._mean_embedding_per_semantic_class:
-                # Use text embedding as a fallback
-                text_embedding = \
-                    self.semantic_text_embedding_list[semantic_id]
-                self._mean_embedding_per_semantic_class[semantic_id] = \
-                    normalize_embedding(text_embedding)
-                # the text embedding is already instance focused and never
-                # needs to be adjusted according the formula, shown in the
-                # paper:
-                # mean_embedding_per_semantic_class - alpha * mean_image_embedding
-                #
-                # however, as we don't indicate, that a class is missing,
-                # it's not obvious that the formula should not be applied
-                # for some classes (i.e. the one without training examples).
-                # to avoid confusion, we set the mean image embedding to
-                # a small value, so that the formula can be applied without
-                # any issues.
-                self._mean_image_embedding_per_semantic_class[semantic_id] \
-                    = np.zeros_like(text_embedding) + 1e-9
+            if 'semantic' in mean_visual_embedding_types:
+                panoptic_embedding = self.load('panoptic_embedding', idx)
+
+                for panoptic_id, embedding_vec in panoptic_embedding.items():
+                    # TODO: This should not be hardcoded.
+                    # Extract semantic class ID
+                    semantic_id = int(panoptic_id) // (1 << 16)
+                    if semantic_id not in self._mean_embedding_per_semantic_class:
+                        self._mean_embedding_per_semantic_class[semantic_id] = \
+                            normalize_embedding(embedding_vec)
+                        # Ensure to create a copy of the normalized image
+                        # embedding, as we will modify it later on.
+                        self._mean_image_embedding_per_semantic_class[semantic_id] = \
+                            normalized_image_embedding.copy()
+                    else:
+                        self._mean_embedding_per_semantic_class[semantic_id] += \
+                            normalize_embedding(embedding_vec)
+                        self._mean_image_embedding_per_semantic_class[semantic_id] += \
+                            normalized_image_embedding
+
+        if 'semantic' in mean_visual_embedding_types:
+            # Handle the case when there are semantic classes, which are not present
+            # in the training set (e.g. SUN RGB-D idx 20).
+            for semantic_id in range(1, self.semantic_n_classes):
+                if semantic_id not in self._mean_embedding_per_semantic_class:
+                    # Use text embedding as a fallback
+                    text_embedding = \
+                        self.semantic_text_embedding_list[semantic_id]
+                    self._mean_embedding_per_semantic_class[semantic_id] = \
+                        normalize_embedding(text_embedding)
+                    # the text embedding is already instance focused and never
+                    # needs to be adjusted according the formula, shown in the
+                    # paper:
+                    # mean_embedding_per_semantic_class - alpha * mean_image_embedding
+                    #
+                    # however, as we don't indicate, that a class is missing,
+                    # it's not obvious that the formula should not be applied
+                    # for some classes (i.e. the one without training examples).
+                    # to avoid confusion, we set the mean image embedding to
+                    # a small value, so that the formula can be applied without
+                    # any issues.
+                    self._mean_image_embedding_per_semantic_class[semantic_id] \
+                        = np.zeros_like(text_embedding) + 1e-9
+
+        if 'scene' in mean_visual_embedding_types:
+            # fill missing mean embeddings with text embeddings as fallback
+            # e.g. for NYUv2 and scene class 5
+            for scene_class in range(1, self.scene_n_classes):
+                if scene_class not in self._mean_image_embedding_per_scene_class:
+                    # Use text embedding as a fallback
+                    text_embedding = self.scene_text_embedding_list[scene_class]
+                    self._mean_image_embedding_per_scene_class[scene_class] = \
+                        normalize_embedding(text_embedding)
 
     @property
     def additional_creation_meta(self) -> Dict:
@@ -298,7 +330,8 @@ class _AuxiliaryDataset(DatasetBase):
             semantic_text_embeddings=self.semantic_text_embedding_list,
             scene_text_embeddings=self.scene_text_embedding_list,
             mean_embedding_per_semantic_class=self._mean_embedding_per_semantic_class,
-            mean_image_embedding_per_semantic_class=self._mean_image_embedding_per_semantic_class
+            mean_image_embedding_per_semantic_class=self._mean_image_embedding_per_semantic_class,
+            mean_image_embedding_per_scene_class=self._mean_image_embedding_per_scene_class,
         )
 
     @staticmethod
@@ -508,5 +541,12 @@ def wrap_dataset_with_auxiliary_data(original_dataset):
             auxiliary_data_keys = \
                 _AuxiliaryDataset.get_available_sample_keys(split, dataset_path)
             return current_dataset_keys + auxiliary_data_keys
+
+        def _load_meta(self, idx: int) -> MetaDict:
+            meta = super()._load_meta(idx)
+            # expose the wrapped dataset class so downstream consumers can route
+            # per-dataset. 
+            meta['dataset_type'] = original_dataset
+            return meta
 
     return DatasetWithAuxiliaryData
