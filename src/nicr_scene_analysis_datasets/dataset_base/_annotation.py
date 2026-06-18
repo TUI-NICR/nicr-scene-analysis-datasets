@@ -48,7 +48,7 @@ class _LabelBase:
 class SemanticLabel(_LabelBase):
     is_thing: Union[bool, None]
     use_orientations: Union[bool, None]
-    color: Tuple[int]
+    color: Tuple[int, ...]
 
 
 @dataclass(frozen=True)
@@ -60,7 +60,7 @@ class SceneLabel(_LabelBase):
 class _LabelListBase:
     def __init__(
         self,
-        label_list: Tuple[_LabelBase] = ()
+        label_list: Tuple[_LabelBase, ...] = ()
     ) -> None:
         self.label_list = list(label_list)
         # a copy of a the class names list for faster name to idx lookup
