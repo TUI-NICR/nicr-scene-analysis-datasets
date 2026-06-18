@@ -2,29 +2,31 @@
 """
 .. codeauthor:: Soehnke Fischedick <soehnke-benedikt.fischedick@tu-ilmenau.de>
 """
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import dataclasses
+
+import numpy as np
 
 from ..dataset_base import DatasetConfig
 
 
 @dataclasses.dataclass(frozen=True)
 class DatasetConfigWithAuxiliary(DatasetConfig):
-    semantic_text_embeddings: List = None
-    scene_text_embeddings: List = None
-    mean_embedding_per_semantic_class: Dict = None
-    mean_image_embedding_per_semantic_class: Dict = None
-    mean_image_embedding_per_scene_class: Dict = None
+    semantic_text_embeddings: Optional[List[np.ndarray]] = None
+    scene_text_embeddings: Optional[List[np.ndarray]] = None
+    mean_embedding_per_semantic_class: Optional[Dict[int, np.ndarray]] = None
+    mean_image_embedding_per_semantic_class: Optional[Dict[int, np.ndarray]] = None
+    mean_image_embedding_per_scene_class: Optional[Dict[int, np.ndarray]] = None
 
 
 def build_dataset_config_with_auxiliary(
     original_config: DatasetConfig,
-    semantic_text_embeddings: List,
-    scene_text_embeddings: List,
-    mean_embedding_per_semantic_class: Dict,
-    mean_image_embedding_per_semantic_class: Dict,
-    mean_image_embedding_per_scene_class: Dict,
+    semantic_text_embeddings: List[np.ndarray],
+    scene_text_embeddings: List[np.ndarray],
+    mean_embedding_per_semantic_class: Dict[int, np.ndarray],
+    mean_image_embedding_per_semantic_class: Dict[int, np.ndarray],
+    mean_image_embedding_per_scene_class: Dict[int, np.ndarray],
 ) -> DatasetConfigWithAuxiliary:
     """
     Creates a new DatasetConfigWithAuxiliary instance by copying attributes

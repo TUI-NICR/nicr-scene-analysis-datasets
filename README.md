@@ -50,11 +50,11 @@ in IEEE International Joint Conference on Neural Networks (IJCNN), 2026.
   year      = {2026}
 }
 ```
+
 </details>
 
 ---
 **Efficient Prediction of Dense Visual Embeddings via Distillation and RGB-D Transformers** ([IEEE Xplore](https://ieeexplore.ieee.org/document/11245809), [arXiv](https://arxiv.org/abs/2601.00359)):
-
 > Fischedick, S., Seichter, D., Stephan, B., Schmidt, R., Gross, H.-M.
 *Efficient Prediction of Dense Visual Embeddings via Distillation and RGB-D Transformers*, in
 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pp. 2400-2407, 2025.
@@ -63,7 +63,7 @@ IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pp. 
 <summary>BibTeX</summary>
 
 ```bibtex
-@inproceedings{dveformer2025iros,  
+@inproceedings{dveformer2025iros,
   title     = {{Efficient Prediction of Dense Visual Embeddings via Distillation and RGB-D Transformers}},
   author    = {Fischedick, S{\"o}hnke and Seichter, Daniel and Stephan, Benedict and Schmidt, Robin and Gross, Horst-Michael},
   booktitle = {IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
@@ -347,7 +347,7 @@ The dataset can be used as an iterator (detectron2 usually does this) and can th
 
 ## Changelog
 
-**Version 0.9.1 (June 17, 2026)**
+**Version 0.9.1 (June 18, 2026)**
 - *no dataset preparation related changes*
 - extend `DatasetConfigWithAuxiliary` with `mean_image_embedding_per_scene_class`
 - add `dataset_type` to the `meta` sample key for `DatasetWithAuxiliaryData`
